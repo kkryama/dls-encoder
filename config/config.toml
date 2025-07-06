@@ -1,0 +1,12 @@
+[setting]
+set_main_image = false
+save_parsed_data = false
+convert = false
+debug = false
+
+[dir_setting]
+source_dir = "./data/source/"
+html_dir = "./data/html/"
+output_dir = "./data/output/"
+log_dir = "./data/log/"
+mp3_output_dir_name = "mp3-output"

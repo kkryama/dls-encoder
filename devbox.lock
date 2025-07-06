@@ -1,0 +1,77 @@
+{
+  "lockfile_version": "1",
+  "packages": {
+    "ffmpeg": {
+      "resolved": "github:NixOS/nixpkgs/02032da4af073d0f6110540c8677f16d4be0117f?narHash=sha256-SvtvVKHaUX4Owb%2BPasySwZsoc5VUeTf1px34BByiOxw%3D#ffmpeg",
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "bin",
+              "path": "/nix/store/yy8kkfkx8rw7laai3x9lx4bs8zacrx9s-ffmpeg-7.1-bin",
+              "default": true
+            },
+            {
+              "name": "man",
+              "path": "/nix/store/k1l962mxgbdfc0l2xa1qxf1md3cs54yy-ffmpeg-7.1-man",
+              "default": true
+            }
+          ]
+        }
+      }
+    },
+    "github:NixOS/nixpkgs/nixpkgs-unstable": {
+      "last_modified": "2025-07-08T22:16:38Z",
+      "resolved": "github:NixOS/nixpkgs/2a2130494ad647f953593c4e84ea4df839fbd68c?lastModified=1752012998&narHash=sha256-Q82Ms%2BFQmgOBkdoSVm%2BFBpuFoeUAffNerR5yVV7SgT8%3D"
+    },
+    "go@latest": {
+      "last_modified": "2025-06-20T02:24:11Z",
+      "resolved": "github:NixOS/nixpkgs/076e8c6678d8c54204abcb4b1b14c366835a58bb#go",
+      "source": "devbox-search",
+      "version": "1.24.4",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/rq7irijkj3nhapmjcv9d96xgkisj55x2-go-1.24.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/rq7irijkj3nhapmjcv9d96xgkisj55x2-go-1.24.4"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/9f64p4ip4iz2nba4wyhn1baq6b6pb6ss-go-1.24.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/9f64p4ip4iz2nba4wyhn1baq6b6pb6ss-go-1.24.4"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/n0gqcdpdk0ap2ikasi36r0szwpk2g35q-go-1.24.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/n0gqcdpdk0ap2ikasi36r0szwpk2g35q-go-1.24.4"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/mdn9hnvf0qmxywbrpbywmxww2adxdn5v-go-1.24.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/mdn9hnvf0qmxywbrpbywmxww2adxdn5v-go-1.24.4"
+        }
+      }
+    }
+  }
+}

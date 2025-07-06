@@ -1,0 +1,19 @@
+# プロジェクトデータ
+data/
+
+# ビルド成果物
+dls-encoder
+*.exe
+*.dll
+*.so
+*.dylib
+
+# テストとログ
+coverage.html
+coverage.out
+*.log
+
+# OS固有のファイル
+.DS_Store    # macOS
+Thumbs.db    # Windows
+desktop.ini  # Windows
