@@ -19,6 +19,17 @@ dls-encoder(`Dynamic Labeling System-Encoder`)はFFmpegを利用してMP3にエ�
 - **画像埋め込み**：メイン画像のMP3への埋め込み
 - **デバッグログ**：詳細なログ出力でトラブルシューティングを支援
 
+### メイン画像のファイル名規則
+
+`set_main_image = true` に設定した場合、以下の規則でメイン画像ファイルを自動検索します：
+
+- **ファイル名形式**：`[ディレクトリ名]_img_main.webp` または `[ディレクトリ名]_img_main.jpg`
+- **検索場所**：HTMLディレクトリ内の `[ディレクトリ名]_files` フォルダ
+- **優先順位**：webp形式が優先され、見つからない場合にjpg形式を検索
+- **例**：ディレクトリ名が `RJ12345678` の場合
+  - 検索場所：`html_dir/RJ12345678_files/`
+  - ファイル名：`RJ12345678_img_main.webp` または `RJ12345678_img_main.jpg`
+
 ## 必要条件
 
 - FFmpeg v4.2以上
@@ -81,6 +92,11 @@ Actor, Brand, AlbumTitle はHTMLファイルをパースした結果が利用さ
 
 生成されたHTMLファイルは `html_dir` で指定されたディレクトリに保存されます。
 HTMLファイルを生成してエンコードまで実施する場合、 `set_main_image` の設定は `false` にするか手動で画像の配置をする必要があることに注意してください。
+
+**メイン画像を設定する場合の手順**：
+1. HTMLファイル名と同じ名前のディレクトリを作成（例：`test.html` → `test_files/`）
+2. そのディレクトリ内に `[HTMLファイル名]_img_main.webp` または `[HTMLファイル名]_img_main.jpg` を配置
+3. 例：`test.html` の場合は `test_files/test_img_main.webp` または `test_files/test_img_main.jpg`
 
 ### 設定ファイル例
 
@@ -164,7 +180,9 @@ HTMLをパースした結果のみ確認したい場合は `save_parsed_data: tr
    下記のファイルはメイン画像が見つからず、MP3変換処理を実行できませんでした
    ```
    - HTMLディレクトリに画像ファイルが存在するか確認してください
-   - 画像ファイルがJPEG形式であるか確認してください
+   - 画像ファイル名が正しい形式であるか確認してください：
+     - 形式：`[ディレクトリ名]_img_main.webp` または `[ディレクトリ名]_img_main.jpg`
+     - 配置場所：`html_dir/[ディレクトリ名]_files/`
    - `set_main_image = false` に設定するか、手動で画像を配置してください
 
 5. **設定ファイルエラー**:

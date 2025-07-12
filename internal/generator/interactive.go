@@ -98,10 +98,10 @@ func InteractiveHTMLGenerator(htmlDir string) error {
 	}
 
 	// HTMLファイルの保存
-	filepath := filepath.Join(htmlDir, filename+".html")
+	filePath := filepath.Join(htmlDir, filename+".html")
 
 	// 既存のファイルチェック
-	if _, err := os.Stat(filepath); err == nil {
+	if _, err := os.Stat(filePath); err == nil {
 		fmt.Print("同名のファイルが既に存在します。上書きしますか？ (y/n): ")
 		answer, _ := reader.ReadString('\n')
 		if strings.TrimSpace(strings.ToLower(answer)) != "y" {
@@ -110,10 +110,18 @@ func InteractiveHTMLGenerator(htmlDir string) error {
 	}
 
 	// HTMLファイルの保存
-	if err := os.WriteFile(filepath, []byte(html), 0644); err != nil {
+	if err := os.WriteFile(filePath, []byte(html), 0644); err != nil {
 		return err
 	}
 
-	fmt.Printf("HTMLファイルを保存しました: %s\n", filepath)
+	fmt.Printf("HTMLファイルを保存しました: %s\n", filePath)
+
+	// メイン画像に関する情報を表示
+	fmt.Println("\n【メイン画像について】")
+	fmt.Printf("メイン画像を設定する場合は、以下の場所に画像ファイルを配置してください：\n")
+	fmt.Printf("  配置ディレクトリ: %s\n", filepath.Join(htmlDir, filename+"_files"))
+	fmt.Printf("  ファイル名: %s_img_main.webp または %s_img_main.jpg\n", filename, filename)
+	fmt.Printf("  (webp形式が優先されます)\n")
+
 	return nil
 }
