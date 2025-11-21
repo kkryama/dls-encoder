@@ -1,6 +1,6 @@
 [setting]
 set_main_image = false
-save_parsed_data = false
+save_parsed_data = true
 convert = false
 debug = false
 

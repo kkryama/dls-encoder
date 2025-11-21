@@ -195,10 +195,10 @@ func processDirectory(cfg *config.Config, targetHtml, key string, data map[strin
 		return fmt.Errorf("HTMLファイルのアクセスに失敗: %w", err)
 	}
 
-	individualData, err := parser.ExtractHtml(targetHtml)
+	individualData, err := parser.ExtractData(targetHtml, key, cfg)
 	if err != nil {
 		*notApplicableData = append(*notApplicableData, key)
-		return fmt.Errorf("HTMLの解析に失敗: %w", err)
+		return fmt.Errorf("データの取得に失敗: %w", err)
 	}
 
 	if cfg.Setting.SetMainImage {
