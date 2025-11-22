@@ -44,8 +44,25 @@ func InteractiveHTMLGenerator(htmlDir, imageDir string) error {
 	}
 	brandName = strings.TrimSpace(brandName)
 
-	// 詳細情報の入力
+	// 声優またはactorの入力
 	details := make(map[string]string)
+	var actorKey string
+	if isParseD {
+		actorKey = "声優"
+	} else {
+		actorKey = "actor"
+	}
+	fmt.Printf("%sを入力してください: ", actorKey)
+	actor, err := reader.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	actor = strings.TrimSpace(actor)
+	if actor != "" {
+		details[actorKey] = actor
+	}
+
+	// 詳細情報の入力
 	for {
 		fmt.Print("詳細情報を追加しますか？ (y/n): ")
 		answer, _ := reader.ReadString('\n')

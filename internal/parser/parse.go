@@ -201,6 +201,38 @@ func parseD(htmlContent string) (map[string]string, error) {
 	// トラックリストを取得
 	// NOTE: 現状ではトラックリストを活用できていないため省略
 
+	// #work_outline テーブルの `tr` をループし 概要 を取得する
+	doc.Find("#work_outline tr").Each(func(i int, s *goquery.Selection) {
+		th := strings.TrimSpace(s.Find("th").Text())
+		td := s.Find("td")
+
+		if th == "" || td.Length() == 0 {
+			return
+		}
+
+		var values []string
+		td.Find("a, div").Each(func(i int, t *goquery.Selection) {
+			text := strings.TrimSpace(t.Text())
+			if text != "" {
+				values = append(values, text)
+			}
+		})
+
+		if len(values) == 0 {
+			text := strings.TrimSpace(td.Text())
+			if text != "" {
+				values = append(values, text)
+			}
+		}
+
+		// 1つの値がある場合、または複数の場合の格納
+		if len(values) == 1 {
+			data[th] = values[0]
+		} else if len(values) > 1 {
+			data[th] = strings.Join(values, ", ")
+		}
+	})
+
 	return data, nil
 }
 
