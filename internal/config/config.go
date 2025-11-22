@@ -22,6 +22,7 @@ func (c *Config) Validate() error {
 		{c.DirSetting.HtmlDir, "html_dir"},
 		{c.DirSetting.LogDir, "log_dir"},
 		{c.DirSetting.OutputDir, "output_dir"},
+		{c.DirSetting.ImageDir, "image_dir"},
 	}
 
 	for _, dir := range dirs {
@@ -59,4 +60,5 @@ type DirSetting struct {
 	OutputDir        string `mapstructure:"output_dir"`
 	LogDir           string `mapstructure:"log_dir"`
 	Mp3OutputDirName string `mapstructure:"mp3_output_dir_name"`
+	ImageDir         string `mapstructure:"image_dir"`
 }

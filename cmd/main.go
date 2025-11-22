@@ -65,7 +65,7 @@ func main() {
 
 	if *createHTML {
 		// HTML生成モード
-		if err := generator.InteractiveHTMLGenerator(cfg.DirSetting.HtmlDir); err != nil {
+		if err := generator.InteractiveHTMLGenerator(cfg.DirSetting.HtmlDir, cfg.DirSetting.ImageDir); err != nil {
 			fmt.Printf("HTMLファイルの生成に失敗しました: %v\n", err)
 			os.Exit(1)
 		}
@@ -202,7 +202,7 @@ func processDirectory(cfg *config.Config, targetHtml, key string, data map[strin
 	}
 
 	if cfg.Setting.SetMainImage {
-		if err := processMainImage(cfg.DirSetting.HtmlDir, key, &individualData, missingImageData); err != nil {
+		if err := processMainImage(cfg.DirSetting.ImageDir, key, &individualData, missingImageData); err != nil {
 			return err
 		}
 	}
@@ -213,13 +213,13 @@ func processDirectory(cfg *config.Config, targetHtml, key string, data map[strin
 
 // processMainImage はメイン画像を検索し、データにパスを設定します。
 // 画像が見つからない、またはエラーが発生した場合は画像不足リストに追加します。
-func processMainImage(htmlDir string, key string, individualData *model.IndividualData, missingImageData *[]string) error {
+func processMainImage(imageDir string, key string, individualData *model.IndividualData, missingImageData *[]string) error {
 	logger.LogDebugEvent("processMainImage_called", map[string]interface{}{
 		"key":        key,
 		"albumTitle": individualData.AlbumTitle,
 		"actor":      individualData.Actor,
 	})
-	mainImagePath, err := storage.FindMainImage(htmlDir, key)
+	mainImagePath, err := storage.FindMainImage(imageDir, key)
 	if err != nil {
 		*missingImageData = append(*missingImageData, key)
 		return fmt.Errorf("メイン画像の検索に失敗: %w", err)

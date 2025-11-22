@@ -14,7 +14,8 @@ dls-encoder(`Dynamic Labeling System-Encoder`)はFFmpegを利用してMP3にエ�
 - **設定ファイル管理**：TOMLファイルによる柔軟なディレクトリ管理
 - **対話型HTMLファイル生成機能**
     - アルバム情報を対話形式で入力
-    - トラックリストの自動生成
+    - トラックリストの自動生成（通常形式の場合）
+    - d_xxxxxx形式のファイル名の場合、トラックリストなしのシンプルなHTMLを生成
     - 既存ファイルの上書き確認
 - **画像埋め込み**：メイン画像のMP3への埋め込み
 - **デバッグログ**：詳細なログ出力でトラブルシューティングを支援
@@ -23,12 +24,12 @@ dls-encoder(`Dynamic Labeling System-Encoder`)はFFmpegを利用してMP3にエ�
 
 `set_main_image = true` に設定した場合、以下の規則でメイン画像ファイルを自動検索します：
 
-- **ファイル名形式**：`[ディレクトリ名]_img_main.webp` または `[ディレクトリ名]_img_main.jpg`
-- **検索場所**：HTMLディレクトリ内の `[ディレクトリ名]_files` フォルダ
+- **ファイル名形式**：`[ディレクトリ名].webp` または `[ディレクトリ名].jpg`
+- **検索場所**：`image_dir` 直下
 - **優先順位**：webp形式が優先され、見つからない場合にjpg形式を検索
 - **例**：ディレクトリ名が `RJ12345678` の場合
-  - 検索場所：`html_dir/RJ12345678_files/`
-  - ファイル名：`RJ12345678_img_main.webp` または `RJ12345678_img_main.jpg`
+  - 検索場所：`image_dir/`
+  - ファイル名：`RJ12345678.webp` または `RJ12345678.jpg`
 
 ## 必要条件
 
@@ -94,9 +95,8 @@ Actor, Brand, AlbumTitle はHTMLファイルをパースした結果が利用さ
 HTMLファイルを生成してエンコードまで実施する場合、 `set_main_image` の設定は `false` にするか手動で画像の配置をする必要があることに注意してください。
 
 **メイン画像を設定する場合の手順**：
-1. HTMLファイル名と同じ名前のディレクトリを作成（例：`test.html` → `test_files/`）
-2. そのディレクトリ内に `[HTMLファイル名]_img_main.webp` または `[HTMLファイル名]_img_main.jpg` を配置
-3. 例：`test.html` の場合は `test_files/test_img_main.webp` または `test_files/test_img_main.jpg`
+1. `image_dir` に `[ディレクトリ名].webp` または `[ディレクトリ名].jpg` を配置
+2. 例：ディレクトリ名が `RJ12345678` の場合は `image_dir/RJ12345678.webp` または `image_dir/RJ12345678.jpg`
 
 ### 出力ディレクトリのクリーンアップ
 
@@ -130,6 +130,7 @@ debug = false           # デバッグログを出力するかどうか
 [dir_setting]
 source_dir = "./data/source/"      # 変換対象のファイルを配置するディレクトリ
 html_dir = "./data/html/"          # メタデータ取得用のHTMLファイルを配置するディレクトリ
+image_dir = "./data/image/"        # メイン画像ファイルの配置先
 log_dir = "./data/log/"            # ログファイルの出力先
 output_dir = "./data/output/"      # 変換後のMP3ファイルの出力先
 mp3_output_dir_name = "mp3-output" # MP3出力ディレクトリ名
@@ -151,6 +152,7 @@ mp3_output_dir_name = "mp3-output" # MP3出力ディレクトリ名
 - `output_dir`：変換後のMP3ファイルの出力先
 - `log_dir`：ログファイルの出力先
 - `mp3_output_dir_name`：MP3出力ディレクトリ名
+- `image_dir`：メイン画像ファイルの配置先
 
 HTMLをパースした結果のみ確認したい場合は `save_parsed_data: true, convert: false` と設定してください。
 
@@ -199,10 +201,10 @@ HTMLをパースした結果のみ確認したい場合は `save_parsed_data: tr
    ```
    下記のファイルはメイン画像が見つからず、MP3変換処理を実行できませんでした
    ```
-   - HTMLディレクトリに画像ファイルが存在するか確認してください
+   - `image_dir` に画像ファイルが存在するか確認してください
    - 画像ファイル名が正しい形式であるか確認してください：
-     - 形式：`[ディレクトリ名]_img_main.webp` または `[ディレクトリ名]_img_main.jpg`
-     - 配置場所：`html_dir/[ディレクトリ名]_files/`
+     - 形式：`[ディレクトリ名].webp` または `[ディレクトリ名].jpg`
+     - 配置場所：`image_dir/` 直下
    - `set_main_image = false` に設定するか、手動で画像を配置してください
 
 5. **設定ファイルエラー**:

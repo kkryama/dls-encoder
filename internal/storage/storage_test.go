@@ -12,23 +12,22 @@ import (
 func TestFindMainImage(t *testing.T) {
 	// テスト用のディレクトリ構造を作成
 	tempDir := t.TempDir()
-	htmlDir := filepath.Join(tempDir, "html")
-	targetDir := filepath.Join(htmlDir, "RJ12345678_files")
+	imageDir := filepath.Join(tempDir, "image")
 
-	err := os.MkdirAll(targetDir, 0755)
+	err := os.MkdirAll(imageDir, 0755)
 	if err != nil {
 		t.Fatalf("テストディレクトリの作成に失敗: %v", err)
 	}
 
 	// テスト用の画像ファイルを作成
 	testFiles := map[string]bool{
-		"RJ12345678_img_main.webp": true,
-		"RJ12345678_img_main.jpg":  true,
-		"other_image.jpg":          false,
+		"RJ12345678.webp": true,
+		"RJ12345678.jpg":  true,
+		"other_image.jpg": false,
 	}
 
 	for filename := range testFiles {
-		path := filepath.Join(targetDir, filename)
+		path := filepath.Join(imageDir, filename)
 		err := os.WriteFile(path, []byte("dummy image data"), 0644)
 		if err != nil {
 			t.Fatalf("テストファイルの作成に失敗 %s: %v", filename, err)
@@ -36,13 +35,13 @@ func TestFindMainImage(t *testing.T) {
 	}
 
 	// メインイメージを検索
-	mainImage, err := FindMainImage(htmlDir, "RJ12345678")
+	mainImage, err := FindMainImage(imageDir, "RJ12345678")
 	if err != nil {
 		t.Fatalf("FindMainImageの実行に失敗: %v", err)
 	}
 
 	// webpファイルが優先して見つかることを確認
-	expectedPath := filepath.Join(targetDir, "RJ12345678_img_main.webp")
+	expectedPath := filepath.Join(imageDir, "RJ12345678.webp")
 	if mainImage != expectedPath {
 		t.Errorf("FindMainImage: got %q, want %q", mainImage, expectedPath)
 	}
@@ -53,12 +52,12 @@ func TestFindMainImage(t *testing.T) {
 		t.Fatalf("テストファイルの削除に失敗: %v", err)
 	}
 
-	mainImage, err = FindMainImage(htmlDir, "RJ12345678")
+	mainImage, err = FindMainImage(imageDir, "RJ12345678")
 	if err != nil {
 		t.Fatalf("FindMainImageの2回目の実行に失敗: %v", err)
 	}
 
-	expectedPath = filepath.Join(targetDir, "RJ12345678_img_main.jpg")
+	expectedPath = filepath.Join(imageDir, "RJ12345678.jpg")
 	if mainImage != expectedPath {
 		t.Errorf("FindMainImage (jpg): got %q, want %q", mainImage, expectedPath)
 	}

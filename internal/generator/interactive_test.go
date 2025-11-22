@@ -70,7 +70,7 @@ func TestInteractiveHTMLGenerator(t *testing.T) {
 			defer func() { os.Stdin = oldStdin }()
 
 			// テスト実行
-			err = InteractiveHTMLGenerator(tempDir)
+			err = InteractiveHTMLGenerator(tempDir, tempDir)
 
 			// エラーチェック
 			if (err != nil) != tt.wantError {
@@ -169,8 +169,8 @@ func TestInteractiveHTMLGeneratorFileOverwrite(t *testing.T) {
 			os.Stdin = tmpfile
 			defer func() { os.Stdin = oldStdin }()
 
-			// テスト実行
-			err = InteractiveHTMLGenerator(tempDir)
+			// テスト実行 (second test)
+			err = InteractiveHTMLGenerator(tempDir, tempDir)
 
 			// エラーチェック
 			if (err != nil) != tt.wantError {
