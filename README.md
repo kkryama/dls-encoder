@@ -98,6 +98,26 @@ HTMLファイルを生成してエンコードまで実施する場合、 `set_m
 2. そのディレクトリ内に `[HTMLファイル名]_img_main.webp` または `[HTMLファイル名]_img_main.jpg` を配置
 3. 例：`test.html` の場合は `test_files/test_img_main.webp` または `test_files/test_img_main.jpg`
 
+### 出力ディレクトリのクリーンアップ
+
+出力ディレクトリ内のファイルをクリーンアップするには、以下のスクリプトを使用します：
+
+```bash
+./scripts/cleanup_output_dir.sh
+```
+
+このスクリプトは `config/config.toml` から `output_dir` のパスを読み取り、ディレクトリ内のすべてのファイルを削除します。実行前に確認プロンプトが表示されます。
+
+### ZIPファイルの展開
+
+`source_dir` 内のZIPファイルを展開するには、以下のスクリプトを使用します：
+
+```bash
+./scripts/unzip-all-zips.sh
+```
+
+このスクリプトは `config/config.toml` から `source_dir` のパスを読み取り、ディレクトリ内のすべてのZIPファイルを展開します。各ZIPファイルは同名のディレクトリに展開されます。
+
 ### 設定ファイル例
 
 ```toml
