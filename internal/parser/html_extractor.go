@@ -24,7 +24,7 @@ func ExtractData(targetHtmlFilePath, dirName string, cfg *config.Config) (model.
 		return result, fmt.Errorf("ファイルの読み込みに失敗しました: %v", err)
 	}
 	htmlContent := string(htmlContentBytes)
-	parsedHtml, err = parseHTML(dirName, htmlContent)
+	parsedHtml, err = parseHTML(htmlContent, dirName)
 
 	if err != nil {
 		return result, fmt.Errorf("データの取得に失敗しました: %v", err)

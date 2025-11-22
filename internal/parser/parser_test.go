@@ -217,6 +217,7 @@ func TestExtractData(t *testing.T) {
 	// テスト用のHTMLファイルを作成
 	htmlFilePath := "test_extract.html"
 	htmlContent := `
+<!DOCTYPE html>
 <html>
 <head>
 	<title>テスト作品</title>
@@ -251,6 +252,10 @@ func TestExtractData(t *testing.T) {
 			</li>
 			</ul>
 		</div>
+	</div>
+
+	<div class="work_main_image">
+		<img src="test.jpg" alt="メイン画像">
 	</div>
 </body>
 </html>`
