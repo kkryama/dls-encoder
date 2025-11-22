@@ -28,6 +28,7 @@ func TestInteractiveHTMLGenerator(t *testing.T) {
 				"ジャンル\n",      // 項目名
 				"テスト\n",       // 値
 				"n\n",         // 詳細情報を追加しない
+				"テストactor\n",  // actor
 				"y\n",         // トラックを追加
 				"トラック1\n",     // トラックタイトル
 				"3:30\n",      // 再生時間
@@ -43,6 +44,7 @@ func TestInteractiveHTMLGenerator(t *testing.T) {
 				"テストアルバム\n", // アルバムタイトル
 				"テストサークル\n", // サークル名
 				"n\n",       // 詳細情報を追加しない
+				"\n",        // actor (空)
 				"n\n",       // トラックを追加しない
 			}, ""),
 			wantError: true,
@@ -70,7 +72,7 @@ func TestInteractiveHTMLGenerator(t *testing.T) {
 			defer func() { os.Stdin = oldStdin }()
 
 			// テスト実行
-			err = InteractiveHTMLGenerator(tempDir)
+			err = InteractiveHTMLGenerator(tempDir, tempDir)
 
 			// エラーチェック
 			if (err != nil) != tt.wantError {
@@ -130,6 +132,7 @@ func TestInteractiveHTMLGeneratorFileOverwrite(t *testing.T) {
 				"テストアルバム\n",       // アルバムタイトル
 				"テストサークル\n",       // サークル名
 				"n\n",             // 詳細情報を追加しない
+				"\n",              // actor (空)
 				"n\n",             // トラックを追加しない
 				"y\n",             // 上書き確認
 			}, ""),
@@ -142,6 +145,7 @@ func TestInteractiveHTMLGeneratorFileOverwrite(t *testing.T) {
 				"テストアルバム\n",       // アルバムタイトル
 				"テストサークル\n",       // サークル名
 				"n\n",             // 詳細情報を追加しない
+				"\n",              // actor (空)
 				"n\n",             // トラックを追加しない
 				"n\n",             // 上書きをキャンセル
 			}, ""),
@@ -169,8 +173,8 @@ func TestInteractiveHTMLGeneratorFileOverwrite(t *testing.T) {
 			os.Stdin = tmpfile
 			defer func() { os.Stdin = oldStdin }()
 
-			// テスト実行
-			err = InteractiveHTMLGenerator(tempDir)
+			// テスト実行 (second test)
+			err = InteractiveHTMLGenerator(tempDir, tempDir)
 
 			// エラーチェック
 			if (err != nil) != tt.wantError {

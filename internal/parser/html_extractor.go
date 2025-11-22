@@ -40,6 +40,8 @@ func ExtractData(targetHtmlFilePath, dirName string, cfg *config.Config) (model.
 			data.AlbumTitle = value
 		case "声優":
 			data.Actor = value
+		case "actor":
+			data.Actor = value
 		case "サークル名":
 			data.Brand = value
 		case "トラックリスト":

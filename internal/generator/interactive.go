@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
 // InteractiveHTMLGenerator は対話型でHTMLファイルを生成します。
 // ユーザーからの入力を受け取り、HTMLテンプレートを使用してファイルを作成します。
-func InteractiveHTMLGenerator(htmlDir string) error {
+func InteractiveHTMLGenerator(htmlDir, imageDir string) error {
 	reader := bufio.NewReader(os.Stdin)
 
 	// ファイル名の入力
@@ -23,6 +24,9 @@ func InteractiveHTMLGenerator(htmlDir string) error {
 	if filename == "" {
 		return fmt.Errorf("ファイル名が入力されていません")
 	}
+
+	// d_xxxxxx形式かどうかを判定
+	isParseD := regexp.MustCompile(`^d_\d{6}$`).MatchString(filename)
 
 	// アルバムタイトルの入力
 	fmt.Print("アルバムタイトルを入力してください: ")
@@ -40,8 +44,25 @@ func InteractiveHTMLGenerator(htmlDir string) error {
 	}
 	brandName = strings.TrimSpace(brandName)
 
-	// 詳細情報の入力
+	// 声優またはactorの入力
 	details := make(map[string]string)
+	var actorKey string
+	if isParseD {
+		actorKey = "声優"
+	} else {
+		actorKey = "actor"
+	}
+	fmt.Printf("%sを入力してください: ", actorKey)
+	actor, err := reader.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	actor = strings.TrimSpace(actor)
+	if actor != "" {
+		details[actorKey] = actor
+	}
+
+	// 詳細情報の入力
 	for {
 		fmt.Print("詳細情報を追加しますか？ (y/n): ")
 		answer, _ := reader.ReadString('\n')
@@ -62,25 +83,27 @@ func InteractiveHTMLGenerator(htmlDir string) error {
 
 	// トラックリストの入力
 	var tracks []Track
-	for {
-		fmt.Print("トラックを追加しますか？ (y/n): ")
-		answer, _ := reader.ReadString('\n')
-		if strings.TrimSpace(strings.ToLower(answer)) != "y" {
-			break
+	if !isParseD {
+		for {
+			fmt.Print("トラックを追加しますか？ (y/n): ")
+			answer, _ := reader.ReadString('\n')
+			if strings.TrimSpace(strings.ToLower(answer)) != "y" {
+				break
+			}
+
+			fmt.Print("トラックタイトルを入力してください: ")
+			title, _ := reader.ReadString('\n')
+			title = strings.TrimSpace(title)
+
+			fmt.Print("再生時間を入力してください (例: 4:30): ")
+			duration, _ := reader.ReadString('\n')
+			duration = strings.TrimSpace(duration)
+
+			tracks = append(tracks, Track{
+				Title:    title,
+				Duration: duration,
+			})
 		}
-
-		fmt.Print("トラックタイトルを入力してください: ")
-		title, _ := reader.ReadString('\n')
-		title = strings.TrimSpace(title)
-
-		fmt.Print("再生時間を入力してください (例: 4:30): ")
-		duration, _ := reader.ReadString('\n')
-		duration = strings.TrimSpace(duration)
-
-		tracks = append(tracks, Track{
-			Title:    title,
-			Duration: duration,
-		})
 	}
 
 	// テンプレートデータの作成
@@ -89,6 +112,7 @@ func InteractiveHTMLGenerator(htmlDir string) error {
 		BrandName:  brandName,
 		Details:    details,
 		Tracks:     tracks,
+		IsParseD:   isParseD,
 	}
 
 	// HTMLの生成
@@ -119,8 +143,8 @@ func InteractiveHTMLGenerator(htmlDir string) error {
 	// メイン画像に関する情報を表示
 	fmt.Println("\n【メイン画像について】")
 	fmt.Printf("メイン画像を設定する場合は、以下の場所に画像ファイルを配置してください：\n")
-	fmt.Printf("  配置ディレクトリ: %s\n", filepath.Join(htmlDir, filename+"_files"))
-	fmt.Printf("  ファイル名: %s_img_main.webp または %s_img_main.jpg\n", filename, filename)
+	fmt.Printf("  配置ディレクトリ: %s\n", imageDir)
+	fmt.Printf("  ファイル名: %s.webp または %s.jpg\n", filename, filename)
 	fmt.Printf("  (webp形式が優先されます)\n")
 
 	return nil

@@ -39,6 +39,30 @@ const htmlTemplate = `<!DOCTYPE html>
 </body>
 </html>`
 
+const parseDTemplate = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{.AlbumTitle}}</title>
+</head>
+<body>
+    <h1 class="productTitle__txt">{{.AlbumTitle}}</h1>
+    
+    <a class="circleName__txt">{{.BrandName}}</a>
+
+    <table id="work_outline">
+        {{range $key, $value := .Details}}
+        <tr>
+            <th>{{$key}}</th>
+            <td>{{$value}}</td>
+        </tr>
+        {{end}}
+    </table>
+
+    <!-- parseDタイプではトラックリストを省略 -->
+</body>
+</html>`
+
 // Track はトラック情報を格納する構造体です。
 type Track struct {
 	Title    string // トラックタイトル
@@ -51,11 +75,19 @@ type TemplateData struct {
 	BrandName  string            // ブランド名
 	Details    map[string]string // 詳細情報のキーバリューペア
 	Tracks     []Track           // トラック一覧
+	IsParseD   bool              // parseDタイプかどうか
 }
 
 // GenerateHTML はテンプレートデータからHTMLを生成します。
 func GenerateHTML(data *TemplateData) (string, error) {
-	tmpl, err := template.New("album").Parse(htmlTemplate)
+	var tmplStr string
+	if data.IsParseD {
+		tmplStr = parseDTemplate
+	} else {
+		tmplStr = htmlTemplate
+	}
+
+	tmpl, err := template.New("album").Parse(tmplStr)
 	if err != nil {
 		return "", err
 	}
