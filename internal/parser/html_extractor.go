@@ -7,24 +7,27 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/kkryama/dls-encoder/internal/config"
 	"github.com/kkryama/dls-encoder/internal/model"
 )
 
-// ExtractHtml はHTMLファイルからデータを抽出し、構造化されたデータを返します。
-func ExtractHtml(targetHtmlFilePath string) (model.IndividualData, error) {
+// ExtractData はHTMLファイルからデータを抽出し、構造化されたデータを返します。
+func ExtractData(targetHtmlFilePath, dirName string, cfg *config.Config) (model.IndividualData, error) {
 	var result model.IndividualData
 
-	// ローカルにある html ファイルを読む
+	var parsedHtml map[string]string
+	var err error
+
+	// ローカルHTMLを読む
 	htmlContentBytes, err := os.ReadFile(targetHtmlFilePath)
 	if err != nil {
 		return result, fmt.Errorf("ファイルの読み込みに失敗しました: %v", err)
 	}
 	htmlContent := string(htmlContentBytes)
+	parsedHtml, err = parseHTML(htmlContent, dirName)
 
-	// HTMLを解析してデータを取得
-	parsedHtml, err := parseHTML(htmlContent)
 	if err != nil {
-		return result, fmt.Errorf("HTMLの解析に失敗しました: %v", err)
+		return result, fmt.Errorf("データの取得に失敗しました: %v", err)
 	}
 
 	// データを整理

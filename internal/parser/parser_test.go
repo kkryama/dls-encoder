@@ -3,9 +3,11 @@ package parser
 import (
 	"os"
 	"testing"
+
+	"github.com/kkryama/dls-encoder/internal/config"
 )
 
-func TestParseHTML(t *testing.T) {
+func TestParseRJ(t *testing.T) {
 	// テスト用のHTML文字列
 	htmlContent := `
 <!DOCTYPE html>
@@ -45,7 +47,7 @@ func TestParseHTML(t *testing.T) {
 </html>`
 
 	// HTMLを解析
-	data, err := parseHTML(htmlContent)
+	data, err := parseRJ(htmlContent)
 	if err != nil {
 		t.Fatalf("HTML解析エラー: %v", err)
 	}
@@ -69,6 +71,23 @@ func TestParseHTML(t *testing.T) {
 }
 
 func TestExtractHtml(t *testing.T) {
+	// テスト用の設定を作成
+	cfg := &config.Config{
+		Setting: config.Setting{
+			SetMainImage:   true,
+			SaveParsedData: true,
+			Convert:        true,
+			Debug:          false,
+		},
+		DirSetting: config.DirSetting{
+			SourceDir:        "./data/source",
+			HtmlDir:          "./data/html",
+			OutputDir:        "./data/output",
+			LogDir:           "./data/log",
+			Mp3OutputDirName: "mp3-output",
+		},
+	}
+
 	// テスト用の一時ファイルを作成
 	tempDir := t.TempDir()
 	htmlFilePath := tempDir + "/test.html"
@@ -123,8 +142,8 @@ func TestExtractHtml(t *testing.T) {
 		t.Fatalf("テストファイルの作成に失敗: %v", err)
 	}
 
-	// まず、parseHTMLの結果を確認
-	parsedData, err := parseHTML(htmlContent)
+	// まず、parseRJの結果を確認
+	parsedData, err := parseRJ(htmlContent)
 	if err != nil {
 		t.Fatalf("HTML解析エラー: %v", err)
 	}
@@ -137,8 +156,8 @@ func TestExtractHtml(t *testing.T) {
 		t.Errorf("トラックリスト文字列: got %q, want %q", trackList, expectedTrackListStr)
 	}
 
-	// ExtractHtmlを実行
-	result, err := ExtractHtml(htmlFilePath)
+	// ExtractDataを実行
+	result, err := ExtractData(htmlFilePath, "test", cfg)
 	if err != nil {
 		t.Fatalf("ExtractHtmlの実行に失敗: %v", err)
 	}
@@ -177,17 +196,178 @@ func TestExtractHtml(t *testing.T) {
 	}
 }
 
-func TestExtractHtml_FileNotFound(t *testing.T) {
-	_, err := ExtractHtml("non_existent_file.html")
+func TestExtractData(t *testing.T) {
+	// テスト用の設定を作成
+	cfg := &config.Config{
+		Setting: config.Setting{
+			SetMainImage:   true,
+			SaveParsedData: true,
+			Convert:        true,
+			Debug:          false,
+		},
+		DirSetting: config.DirSetting{
+			SourceDir:        "./data/source",
+			HtmlDir:          "./data/html",
+			OutputDir:        "./data/output",
+			LogDir:           "./data/log",
+			Mp3OutputDirName: "mp3-output",
+		},
+	}
+
+	// テスト用のHTMLファイルを作成
+	htmlFilePath := "test_extract.html"
+	htmlContent := `
+<!DOCTYPE html>
+<html>
+<head>
+	<title>テスト作品</title>
+</head>
+<body>
+	<h1 id="work_name">テストアルバム</h1>
+	<div>
+		<span itemprop="brand" class="maker_name"><a>テストブランド</a></span>
+	</div>
+	<table id="work_outline">
+		<tr>
+			<th>声優</th>
+			<td><a>テスト声優</a></td>
+		</tr>
+	</table>
+
+	<div class="work_parts type_tracklist">
+		<h3 class="work_parts_heading">収録内容</h3>
+		<div class="work_parts_area">
+			<ul class="work_tracklist">
+			<li class="work_tracklist_item">
+				<div class="title">トラック1</div>
+				<div class="time">01:00</div>
+			</li>
+			<li class="work_tracklist_item">
+				<div class="title">トラック2</div>
+				<div class="time">02:00</div>
+			</li>
+			<li class="work_tracklist_item">
+				<div class="title">トラック3</div>
+				<div class="time">03:00</div>
+			</li>
+			</ul>
+		</div>
+	</div>
+
+	<div class="work_main_image">
+		<img src="test.jpg" alt="メイン画像">
+	</div>
+</body>
+</html>`
+
+	// ファイルに書き込み
+	if err := os.WriteFile(htmlFilePath, []byte(htmlContent), 0644); err != nil {
+		t.Fatalf("テストファイルの作成に失敗: %v", err)
+	}
+	defer os.Remove(htmlFilePath) // テスト後に削除
+
+	// ExtractDataを実行
+	result, err := ExtractData(htmlFilePath, "test", cfg)
+	if err != nil {
+		t.Fatalf("ExtractDataの実行に失敗: %v", err)
+	}
+
+	// 基本情報の検証
+	if result.AlbumTitle != "テストアルバム" {
+		t.Errorf("AlbumTitle: got %q, want %q", result.AlbumTitle, "テストアルバム")
+	}
+	if result.Brand != "テストブランド" {
+		t.Errorf("Brand: got %q, want %q", result.Brand, "テストブランド")
+	}
+	if result.Actor != "テスト声優" {
+		t.Errorf("Actor: got %q, want %q", result.Actor, "テスト声優")
+	}
+
+	// トラックリストの検証
+	if len(result.TrackList) != 3 {
+		t.Errorf("TrackList length: got %d, want 3", len(result.TrackList))
+		return
+	}
+
+	expectedTracks := []struct {
+		title    string
+		duration string
+	}{
+		{"トラック1", "1分0秒"},
+		{"トラック2", "2分0秒"},
+		{"トラック3", "3分0秒"},
+	}
+
+	for i, track := range result.TrackList {
+		expectedTrack := expectedTracks[i]
+		if track.TrackTitle != expectedTrack.title {
+			t.Errorf("Track title: got %q, want %q", track.TrackTitle, expectedTrack.title)
+		}
+		if track.TrackDuration != expectedTrack.duration {
+			t.Errorf("Track duration: got %q, want %q", track.TrackDuration, expectedTrack.duration)
+		}
+	}
+}
+
+func TestExtractData_FileNotFound(t *testing.T) {
+	cfg := &config.Config{}
+	_, err := ExtractData("non_existent_file.html", "test", cfg)
 	if err == nil {
 		t.Error("存在しないファイルでエラーが発生すべき")
 	}
 }
 
-func TestParseHTML_InvalidHTML(t *testing.T) {
+func TestParseRJ_InvalidHTML(t *testing.T) {
 	invalidHTML := "This is not valid HTML"
-	_, err := parseHTML(invalidHTML)
+	_, err := parseRJ(invalidHTML)
 	if err != nil {
 		t.Logf("期待通り、無効なHTMLでエラーが発生: %v", err)
+	}
+}
+
+func TestParseD(t *testing.T) {
+	// d_xxxxxx のテスト用HTML
+	htmlContent := `
+<html>
+<head>
+	<meta property="og:image" content="https://example.com/main.jpg">
+</head>
+<body>
+	<h1 class="productTitle__txt">テストアルバム<span class="productTitle__txt--campaign">【35%OFF】</span></h1>
+	<a class="circleName__txt">テストサークル</a>
+	<div class="productInformation__item">
+		<dl class="informationList">
+			<dt class="informationList__ttl">声優</dt>
+			<dd class="informationList__txt"><a>テスト声優</a></dd>
+		</dl>
+	</div>
+	<img src="https://example.com/main.jpg" alt="メイン画像">
+	<ul class="trackList">
+		<li>
+			<div class="title">トラック1</div>
+			<div class="time">01:00</div>
+		</li>
+	</ul>
+</body>
+</html>`
+
+	// HTMLを解析
+	data, err := parseD(htmlContent)
+	if err != nil {
+		t.Fatalf("d_xxxxxx HTML解析エラー: %v", err)
+	}
+
+	// 検証
+	if data["アルバムタイトル"] != "テストアルバム" {
+		t.Errorf("アルバムタイトル: got %q, want %q", data["アルバムタイトル"], "テストアルバム")
+	}
+	if data["サークル名"] != "テストサークル" {
+		t.Errorf("サークル名: got %q, want %q", data["サークル名"], "テストサークル")
+	}
+	if data["声優"] != "テスト声優" {
+		t.Errorf("声優: got %q, want %q", data["声優"], "テスト声優")
+	}
+	if data["メイン画像"] != "https://example.com/main.jpg" {
+		t.Errorf("メイン画像: got %q, want %q", data["メイン画像"], "https://example.com/main.jpg")
 	}
 }
