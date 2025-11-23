@@ -12,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strings"
 	"syscall"
 	"time"
 
@@ -29,6 +30,7 @@ const (
 	timeStampFormat = "20060102_150405"
 	wavExtension    = ".wav"
 	mp3Extension    = ".mp3"
+	version         = "20251124-015047" // 作業日時で更新
 )
 
 // main はプログラムのエントリーポイントです。
@@ -82,6 +84,8 @@ func main() {
 // runWithContext はコンテキストを使用して変換処理の全体フローを制御します。
 // 依存関係の確認、設定の読み込み、ログの初期化、HTMLの解析、MP3変換を実行します。
 func runWithContext(ctx context.Context) error {
+	logger.Info("dls-encoder version: " + version)
+
 	if err := validateDependencies(); err != nil {
 		return fmt.Errorf("依存関係の確認に失敗: %w", err)
 	}
@@ -300,7 +304,17 @@ func convertFiles(ctx context.Context, cfg *config.Config, key string, value mod
 	targetDir := filepath.Join(cfg.DirSetting.SourceDir, key)
 	audioFiles := audioconverter.FindAudioFiles(targetDir)
 
-	mp3OutputDir := filepath.Join(cfg.DirSetting.OutputDir, cfg.DirSetting.Mp3OutputDirName, value.Actor, value.Brand, fmt.Sprintf("【%s】%s", key, value.AlbumTitle))
+	// Actor が複数の場合、省略してディレクトリ名を短くする
+	actors := strings.Split(value.Actor, ",")
+	for i, actor := range actors {
+		actors[i] = strings.TrimSpace(actor)
+	}
+	if len(actors) > 2 {
+		actors = append(actors[:2], "他")
+	}
+	actorDir := strings.Join(actors, "・")
+
+	mp3OutputDir := filepath.Join(cfg.DirSetting.OutputDir, cfg.DirSetting.Mp3OutputDirName, actorDir, value.Brand, fmt.Sprintf("【%s】%s", key, value.AlbumTitle))
 
 	if err := prepareOutputDirectory(mp3OutputDir); err != nil {
 		return err
