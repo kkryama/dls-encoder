@@ -54,7 +54,11 @@ func parseRJ(htmlContent string) (map[string]string, error) {
 		if len(values) == 1 {
 			data[th] = values[0]
 		} else if len(values) > 1 {
-			data[th] = strings.Join(values, ", ")
+			separator := ", "
+			if th == "声優" {
+				separator = "・"
+			}
+			data[th] = strings.Join(values, separator)
 		}
 	})
 
@@ -144,9 +148,19 @@ func parseD(htmlContent string) (map[string]string, error) {
 		doc.Find("div.productInformation__item dl.informationList").Each(func(i int, s *goquery.Selection) {
 			dt := strings.TrimSpace(s.Find("dt.informationList__ttl").Text())
 			if dt == "声優" {
-				actor := strings.TrimSpace(s.Find("dd.informationList__txt a").Text())
-				if actor != "" {
-					data["声優"] = actor
+				var actors []string
+				s.Find("dd.informationList__txt a").Each(func(j int, t *goquery.Selection) {
+					actor := strings.TrimSpace(t.Text())
+					if actor != "" {
+						actors = append(actors, actor)
+					}
+				})
+				if len(actors) > 0 {
+					if len(actors) == 1 {
+						data["声優"] = actors[0]
+					} else {
+						data["声優"] = strings.Join(actors, "・")
+					}
 				}
 			}
 		})
@@ -229,7 +243,11 @@ func parseD(htmlContent string) (map[string]string, error) {
 		if len(values) == 1 {
 			data[th] = values[0]
 		} else if len(values) > 1 {
-			data[th] = strings.Join(values, ", ")
+			separator := ", "
+			if th == "声優" {
+				separator = "・"
+			}
+			data[th] = strings.Join(values, separator)
 		}
 	})
 
