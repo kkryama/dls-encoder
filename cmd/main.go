@@ -30,8 +30,18 @@ const (
 	timeStampFormat = "20060102_150405"
 	wavExtension    = ".wav"
 	mp3Extension    = ".mp3"
-	version         = "20251124-015047" // 作業日時で更新
+	version         = "20251129-160000" // 作業日時で更新
 )
+
+// truncateAlbumTitle はアルバムタイトルが長すぎる場合に省略します。
+func truncateAlbumTitle(title string) string {
+	const maxLen = 20
+	runes := []rune(title)
+	if len(runes) <= maxLen {
+		return title
+	}
+	return string(runes[:maxLen]) + "(…略)"
+}
 
 // main はプログラムのエントリーポイントです。
 // エラーが発生した場合は、エラーメッセージを表示して終了します。
@@ -314,7 +324,9 @@ func convertFiles(ctx context.Context, cfg *config.Config, key string, value mod
 	}
 	actorDir := strings.Join(actors, "・")
 
-	mp3OutputDir := filepath.Join(cfg.DirSetting.OutputDir, cfg.DirSetting.Mp3OutputDirName, actorDir, value.Brand, fmt.Sprintf("【%s】%s", key, value.AlbumTitle))
+	shortAlbumTitle := truncateAlbumTitle(value.AlbumTitle)
+
+	mp3OutputDir := filepath.Join(cfg.DirSetting.OutputDir, cfg.DirSetting.Mp3OutputDirName, actorDir, value.Brand, fmt.Sprintf("【%s】%s", key, shortAlbumTitle))
 
 	if err := prepareOutputDirectory(mp3OutputDir); err != nil {
 		return err
