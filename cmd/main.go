@@ -30,7 +30,7 @@ const (
 	timeStampFormat = "20060102_150405"
 	wavExtension    = ".wav"
 	mp3Extension    = ".mp3"
-	version         = "20251129-160000" // 作業日時で更新
+	version         = "20251130-120000" // 作業日時で更新
 )
 
 // truncateAlbumTitle はアルバムタイトルが長すぎる場合に省略します。
