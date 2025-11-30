@@ -98,6 +98,10 @@ func TestFindAudioFiles(t *testing.T) {
 		"track4_効果音なし.wav":    false, // 除外されるべき
 		"track5.wav":          true,  // 含まれるべき
 		"__MACOSX/track6.wav": false, // 除外されるべき
+		"track7.flac":         true,  // 含まれるべき
+		"track7.mp3":          false, // 除外されるべき（FLACがある）
+		"track8.mp3":          true,  // 含まれるべき
+		"TRACK9.WAV":          true,  // 含まれるべき（大文字対応）
 	}
 
 	for filename := range testFiles {
