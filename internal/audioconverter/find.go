@@ -1,17 +1,21 @@
 package audioconverter
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/kkryama/dls-encoder/internal/config"
+	"github.com/kkryama/dls-encoder/internal/logger"
 )
 
 // FindAudioFiles は指定されたディレクトリから音声ファイルを検索し、パスのリストを返します。
 // WAVファイルを優先し、WAVが存在しない場合FLACを、次にMP3ファイルを対象とします。
-func FindAudioFiles(directory string) []string {
-	audioFiles := make(map[string]string)                                    // 拡張子を除いたファイル名をキーとして、対応するファイルのフルパスを値に持つマップ
-	seen := make(map[string]int)                                             // 拡張子を除いたファイル名をキーとして、そのファイルの優先度（WAV:3, FLAC:2, MP3:1）を値に持つマップ
-	excludeStrings := []string{"SE無し", "SEなし", "効果音無し", "効果音なし", "__MACOSX"} // パス中に含まれていたら除外する文字列リスト
+func FindAudioFiles(directory string, cfg *config.Config) []string {
+	audioFiles := make(map[string]string)        // 拡張子を除いたファイル名をキーとして、対応するファイルのフルパスを値に持つマップ
+	seen := make(map[string]int)                 // 拡張子を除いたファイル名をキーとして、そのファイルの優先度（WAV:3, FLAC:2, MP3:1）を値に持つマップ
+	excludeStrings := cfg.Setting.ExcludeStrings // パス中に含まれていたら除外する文字列リスト
 
 	// 優先度: WAV > FLAC > MP3
 	priority := map[string]int{
@@ -28,6 +32,7 @@ func FindAudioFiles(directory string) []string {
 			// 除外対象の文字列が含まれている場合はスキップ
 			for _, excl := range excludeStrings {
 				if strings.Contains(path, excl) {
+					logger.Info(fmt.Sprintf("除外文字列 '%s' がパス '%s' に含まれているため、スキップします。", excl, path))
 					return nil
 				}
 			}

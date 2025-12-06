@@ -9,6 +9,7 @@ dls-encoder(`Dynamic Labeling System-Encoder`)はFFmpegを利用してMP3にエ�
 
 - **音声変換**：WAV、MP3ファイルからMP3への変換
     - 同じディレクトリにWAVとMP3が存在する場合、WAVを優先してエンコード
+    - 設定ファイルで指定した除外文字列を含むファイルは自動的に除外（デフォルト: "SE無し", "SEなし", "効果音無し", "効果音なし", "__MACOSX"）
     - 320kbps、48kHzの高音質設定
 - **メタデータ自動設定**：同名のHTMLファイルを参照してID3タグを自動設定
 - **設定ファイル管理**：TOMLファイルによる柔軟なディレクトリ管理
@@ -126,6 +127,7 @@ set_main_image = true    # メイン画像を設定するかどうか
 save_parsed_data = true  # HTMLをパースしたデータを保存するかどうか
 convert = true           # 音声ファイルの変換を実行するかどうか
 debug = false           # デバッグログを出力するかどうか
+exclude_strings = ["SE無し", "SEなし", "効果音無し", "効果音なし", "__MACOSX"]  # 除外する文字列リスト
 
 [dir_setting]
 source_dir = "./data/source/"      # 変換対象のファイルを配置するディレクトリ
@@ -145,6 +147,7 @@ mp3_output_dir_name = "mp3-output" # MP3出力ディレクトリ名
 - `save_parsed_data`：HTMLをパースしたデータをJSONファイルとして保存するかどうか（true/false）
 - `convert`：音声ファイルの変換を実行するかどうか（true/false）
 - `debug`：デバッグログを出力するかどうか（true/false）
+- `exclude_strings`：除外する文字列のリスト（配列）
 
 #### [dir_setting] セクション
 - `source_dir`：変換対象のファイルを配置するディレクトリ
@@ -157,10 +160,14 @@ mp3_output_dir_name = "mp3-output" # MP3出力ディレクトリ名
 HTMLをパースした結果のみ確認したい場合は `save_parsed_data: true, convert: false` と設定してください。
 
 #### 除外ファイル
-以下の文字列を含むファイルは自動的に除外されます：
+設定ファイルの `exclude_strings` で指定された文字列を含むファイルは自動的に除外されます。これにより、不要なファイル（例: SEなしファイルや一時ファイル）を変換対象から除外できます。
+
+デフォルトの除外文字列:
 - `SE無し`、`SEなし`
 - `効果音無し`、`効果音なし`
 - `__MACOSX`
+
+必要に応じて `config/config.toml` の `exclude_strings` を編集して除外パターンをカスタマイズしてください。
 
 ## パフォーマンスと制限事項
 

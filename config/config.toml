@@ -1,8 +1,9 @@
 [setting]
-set_main_image = false
-save_parsed_data = true
-convert = false
-debug = false
+set_main_image = true              # メイン画像を設定するかどうか
+save_parsed_data = true            # 解析データをJSONファイルに保存するかどうか
+convert = false                    # MP3変換を実行するかどうか
+debug = false                      # デバッグログを出力するかどうか
+exclude_strings = ["SE無し", "SEなし", "効果音無し", "効果音なし", "_MACOSX"]  # 除外する文字列リスト
 
 [dir_setting]
 source_dir = "./data/source/"
