@@ -48,10 +48,11 @@ func (c *Config) Validate() error {
 }
 
 type Setting struct {
-	SetMainImage   bool `mapstructure:"set_main_image"`
-	SaveParsedData bool `mapstructure:"save_parsed_data"`
-	Convert        bool `mapstructure:"convert"`
-	Debug          bool `mapstructure:"debug"`
+	SetMainImage   bool     `mapstructure:"set_main_image"`
+	SaveParsedData bool     `mapstructure:"save_parsed_data"`
+	Convert        bool     `mapstructure:"convert"`
+	Debug          bool     `mapstructure:"debug"`
+	ExcludeStrings []string `mapstructure:"exclude_strings"`
 }
 
 type DirSetting struct {

@@ -5,6 +5,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/kkryama/dls-encoder/internal/config"
 )
 
 func TestEnsureDirExists(t *testing.T) {
@@ -89,6 +91,13 @@ func TestCleanUp(t *testing.T) {
 func TestFindAudioFiles(t *testing.T) {
 	tempDir := t.TempDir()
 
+	// テスト用の設定を作成
+	cfg := &config.Config{
+		Setting: config.Setting{
+			ExcludeStrings: []string{"SE無し", "SEなし", "効果音無し", "効果音なし", "__MACOSX"},
+		},
+	}
+
 	// テストファイルを作成
 	testFiles := map[string]bool{
 		"track1.wav":          true,  // 含まれるべき
@@ -116,7 +125,7 @@ func TestFindAudioFiles(t *testing.T) {
 	}
 
 	// オーディオファイルを検索
-	audioFiles := FindAudioFiles(tempDir)
+	audioFiles := FindAudioFiles(tempDir, cfg)
 
 	// 結果を検証
 	expectedCount := 0

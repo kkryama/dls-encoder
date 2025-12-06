@@ -30,7 +30,7 @@ const (
 	timeStampFormat = "20060102_150405"
 	wavExtension    = ".wav"
 	mp3Extension    = ".mp3"
-	version         = "20251130-120000" // 作業日時で更新
+	version         = "20251206-120000" // 作業日時で更新
 )
 
 // truncateAlbumTitle はアルバムタイトルが長すぎる場合に省略します。
@@ -312,7 +312,7 @@ func convertFiles(ctx context.Context, cfg *config.Config, key string, value mod
 	})
 
 	targetDir := filepath.Join(cfg.DirSetting.SourceDir, key)
-	audioFiles := audioconverter.FindAudioFiles(targetDir)
+	audioFiles := audioconverter.FindAudioFiles(targetDir, cfg)
 
 	// Actor が複数の場合、省略してディレクトリ名を短くする
 	actors := strings.Split(value.Actor, ",")
