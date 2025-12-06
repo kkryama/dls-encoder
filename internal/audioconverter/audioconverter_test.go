@@ -72,6 +72,15 @@ func TestCleanUp(t *testing.T) {
 		}
 	}
 
+	// ネストしたディレクトリも作成して削除できることを確認
+	nestedDir := filepath.Join(tempDir, "nested")
+	if err := os.MkdirAll(filepath.Join(nestedDir, "child"), 0755); err != nil {
+		t.Fatalf("ネストディレクトリの作成に失敗: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(nestedDir, "child", "inner.txt"), []byte("nested"), 0644); err != nil {
+		t.Fatalf("ネストファイルの作成に失敗: %v", err)
+	}
+
 	// クリーンアップを実行
 	err := CleanUp(tempDir)
 	if err != nil {
@@ -85,6 +94,10 @@ func TestCleanUp(t *testing.T) {
 	}
 	if len(files) != 0 {
 		t.Error("クリーンアップ後もファイルが残っています")
+	}
+
+	if _, err := os.Stat(nestedDir); !os.IsNotExist(err) {
+		t.Error("クリーンアップ後もサブディレクトリが残っています")
 	}
 }
 

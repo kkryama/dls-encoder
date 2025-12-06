@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"os"
+	"sort"
 )
 
 // LoadTargets は指定されたベースディレクトリ内のサブディレクトリ名を取得します。
@@ -19,6 +20,8 @@ func LoadTargets(baseDir string) ([]string, error) {
 			targets = append(targets, entry.Name())
 		}
 	}
+
+	sort.Strings(targets)
 
 	return targets, nil
 }

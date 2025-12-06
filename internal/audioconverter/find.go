@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/kkryama/dls-encoder/internal/config"
@@ -32,7 +33,7 @@ func FindAudioFiles(directory string, cfg *config.Config) []string {
 			// 除外対象の文字列が含まれている場合はスキップ
 			for _, excl := range excludeStrings {
 				if strings.Contains(path, excl) {
-					logger.Info(fmt.Sprintf("除外文字列 '%s' がパス '%s' に含まれているため、スキップします。", excl, path))
+					logger.Debug(fmt.Sprintf("除外文字列 '%s' がパス '%s' に含まれているため、スキップします。", excl, path))
 					return nil
 				}
 			}
@@ -46,8 +47,15 @@ func FindAudioFiles(directory string, cfg *config.Config) []string {
 			// 例3: 次に "track1.flac" (p=2) が見つかると、seen["track1"] = 3 > 2 なので、更新されません（WAV が優先）。
 			if p, ok := priority[ext]; ok {
 				if seen[name] < p {
+					prevPriority := seen[name]
+					prevPath := audioFiles[name]
 					seen[name] = p          // 優先度を更新
 					audioFiles[name] = path // パスを記録
+					if prevPriority > 0 {
+						logger.Debug(fmt.Sprintf("%s は優先度 %d から %d に更新されたため '%s' を '%s' へ差し替えました。", name, prevPriority, p, prevPath, path))
+					} else {
+						logger.Debug(fmt.Sprintf("%s を優先度 %d のファイル '%s' として登録しました。", name, p, path))
+					}
 				}
 			}
 		}
@@ -55,13 +63,19 @@ func FindAudioFiles(directory string, cfg *config.Config) []string {
 	})
 
 	if err != nil {
+		logger.Warn(fmt.Sprintf("音声ファイル探索中にエラー: %v", err))
 		return nil
 	}
 
 	// マップからリストに変換
 	var result []string
-	for _, path := range audioFiles {
-		result = append(result, path)
+	keys := make([]string, 0, len(audioFiles))
+	for name := range audioFiles {
+		keys = append(keys, name)
+	}
+	sort.Strings(keys)
+	for _, name := range keys {
+		result = append(result, audioFiles[name])
 	}
 
 	return result

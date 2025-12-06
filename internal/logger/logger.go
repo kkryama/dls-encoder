@@ -174,42 +174,34 @@ func (l *StandardLogger) outputWithDepth(level, message string, depth int) {
 // パッケージレベルのAPI関数
 // ==============================================
 
+// getDefaultLogger はスレッドセーフにデフォルトロガーを取得
+func getDefaultLogger() Logger {
+	defaultMu.RLock()
+	defer defaultMu.RUnlock()
+	return defaultLogger
+}
+
 // Debug はデバッグレベルのログを出力
 func Debug(args ...interface{}) {
-	defaultMu.RLock()
-	logger := defaultLogger
-	defaultMu.RUnlock()
-	logger.Debug(args...)
+	getDefaultLogger().Debug(args...)
 }
 
 // Info は情報レベルのログを出力
 func Info(args ...interface{}) {
-	defaultMu.RLock()
-	logger := defaultLogger
-	defaultMu.RUnlock()
-	logger.Info(args...)
+	getDefaultLogger().Info(args...)
 }
 
 // Warn は警告レベルのログを出力
 func Warn(args ...interface{}) {
-	defaultMu.RLock()
-	logger := defaultLogger
-	defaultMu.RUnlock()
-	logger.Warn(args...)
+	getDefaultLogger().Warn(args...)
 }
 
 // Error はエラーレベルのログを出力
 func Error(args ...interface{}) {
-	defaultMu.RLock()
-	logger := defaultLogger
-	defaultMu.RUnlock()
-	logger.Error(args...)
+	getDefaultLogger().Error(args...)
 }
 
 // Fatal は致命的エラーレベルのログを出力し、プログラムを終了
 func Fatal(args ...interface{}) {
-	defaultMu.RLock()
-	logger := defaultLogger
-	defaultMu.RUnlock()
-	logger.Fatal(args...)
+	getDefaultLogger().Fatal(args...)
 }
