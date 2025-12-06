@@ -48,9 +48,9 @@ func TestLoggingOutput(t *testing.T) {
 		message  string
 		expected string
 	}{
-		{"Info", Info, "info message", "[INFO] info message"},
-		{"Error", Error, "error message", "[ERROR] error message"},
-		{"Warn", Warn, "warn message", "[WARN] warn message"},
+		{"info", info, "info message", "[INFO] info message"},
+		{"errorLog", errorLog, "error message", "[ERROR] error message"},
+		{"warn", warn, "warn message", "[WARN] warn message"},
 	}
 
 	for _, tc := range testCases {
@@ -74,7 +74,7 @@ func TestDebugOutput(t *testing.T) {
 	oldLogger := defaultLogger
 	defaultLogger = testLoggerNoDebug
 
-	Debug("debug message")
+	debug("debug message")
 	if buf.String() != "" {
 		t.Error("デバッグモードが無効の場合、出力されるべきではありません")
 	}
@@ -85,7 +85,7 @@ func TestDebugOutput(t *testing.T) {
 	testLoggerWithDebug.consoleLogger = log.New(&buf, "", 0)
 	defaultLogger = testLoggerWithDebug
 
-	Debug("debug message")
+	debug("debug message")
 	if !strings.Contains(buf.String(), "[DEBUG] debug message") {
 		t.Errorf("デバッグメッセージが出力されていません。output: %q", buf.String())
 	}
@@ -107,7 +107,7 @@ func TestFileOutput(t *testing.T) {
 
 	// テストメッセージを出力
 	testMessage := "test file output"
-	Info(testMessage)
+	info(testMessage)
 
 	// ファイルの内容を読み取り
 	content, err := os.ReadFile(logPath)
@@ -123,9 +123,127 @@ func TestFileOutput(t *testing.T) {
 
 func TestFatal(t *testing.T) {
 	if os.Getenv("TEST_FATAL") == "1" {
-		Fatal("fatal error")
+		fatal("fatal error")
 		return
 	}
 	// 通常のテストでは、Fatalが呼び出されないことを確認するだけです
 	// Fatalは実際にプロセスを終了させるため、単体テストでは呼び出しません
+}
+
+func TestStructuredLogging(t *testing.T) {
+	var buf bytes.Buffer
+	testLogger := NewStandardLogger(DEBUG, true)
+	testLogger.consoleLogger = log.New(&buf, "", 0)
+
+	oldLogger := defaultLogger
+	defaultLogger = testLogger
+	defer func() { defaultLogger = oldLogger }()
+
+	testCases := []struct {
+		name     string
+		logFunc  func(string, map[string]interface{})
+		logLevel string
+	}{
+		{"LogDebugEvent", LogDebugEvent, "DEBUG"},
+		{"LogInfoEvent", LogInfoEvent, "INFO"},
+		{"LogWarnEvent", LogWarnEvent, "WARN"},
+		{"LogErrorEvent", LogErrorEvent, "ERROR"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			buf.Reset()
+			tc.logFunc("test_event", map[string]interface{}{
+				"key":     "value",
+				"numeric": 123,
+			})
+			output := buf.String()
+
+			// ログレベルの確認
+			if !strings.Contains(output, "["+tc.logLevel+"]") {
+				t.Errorf("%s: ログレベルが含まれていません。output: %q", tc.name, output)
+			}
+
+			// JSONの確認
+			if !strings.Contains(output, `"event":"test_event"`) {
+				t.Errorf("%s: イベント名が含まれていません。output: %q", tc.name, output)
+			}
+			if !strings.Contains(output, `"key":"value"`) {
+				t.Errorf("%s: キーが含まれていません。output: %q", tc.name, output)
+			}
+			if !strings.Contains(output, `"numeric":123`) {
+				t.Errorf("%s: 数値が含まれていません。output: %q", tc.name, output)
+			}
+		})
+	}
+}
+
+func TestInternalLogFunctions(t *testing.T) {
+	var buf bytes.Buffer
+	testLogger := NewStandardLogger(DEBUG, true)
+	testLogger.consoleLogger = log.New(&buf, "", 0)
+
+	oldLogger := defaultLogger
+	defaultLogger = testLogger
+	defer func() { defaultLogger = oldLogger }()
+
+	testCases := []struct {
+		name     string
+		logFunc  func(...interface{})
+		message  string
+		expected string
+	}{
+		{"debug", debug, "debug message", "[DEBUG] debug message"},
+		{"info", info, "info message", "[INFO] info message"},
+		{"warn", warn, "warn message", "[WARN] warn message"},
+		{"errorLog", errorLog, "error message", "[ERROR] error message"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			buf.Reset()
+			tc.logFunc(tc.message)
+			output := buf.String()
+			if !strings.Contains(output, tc.expected) {
+				t.Errorf("%s: 期待される出力が含まれていません。got: %q, want: %q", tc.name, output, tc.expected)
+			}
+		})
+	}
+}
+
+func TestSimpleMessageLogging(t *testing.T) {
+	var buf bytes.Buffer
+	testLogger := NewStandardLogger(INFO, false)
+	testLogger.consoleLogger = log.New(&buf, "", 0)
+
+	oldLogger := defaultLogger
+	defaultLogger = testLogger
+	defer func() { defaultLogger = oldLogger }()
+
+	testCases := []struct {
+		name     string
+		logFunc  func(string)
+		message  string
+		expected string
+	}{
+		{"LogMessage", LogMessage, "info message", "[INFO] info message"},
+		{"LogWarnMessage", LogWarnMessage, "warn message", "[WARN] warn message"},
+		{"LogErrorMessage", LogErrorMessage, "error message", "[ERROR] error message"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			buf.Reset()
+			tc.logFunc(tc.message)
+			output := buf.String()
+			if !strings.Contains(output, tc.expected) {
+				t.Errorf("%s: 期待される出力が含まれていません。got: %q, want: %q", tc.name, output, tc.expected)
+			}
+
+			// JSONが含まれていないことを確認
+			if strings.Contains(output, "{") || strings.Contains(output, "}") {
+				t.Errorf("%s: シンプルメッセージにJSON形式が含まれています。output: %q", tc.name, output)
+			}
+		})
+	}
 }

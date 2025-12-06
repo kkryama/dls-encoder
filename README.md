@@ -7,8 +7,9 @@ dls-encoder(`Dynamic Labeling System-Encoder`)はFFmpegを利用してMP3にエ�
 
 ## 機能
 
-- **音声変換**：WAV、MP3ファイルからMP3への変換
-    - 同じディレクトリにWAVとMP3が存在する場合、WAVを優先してエンコード
+- **音声変換**：WAV、FLAC、MP3ファイルからMP3への変換
+   - 優先度: WAV > FLAC > MP3
+   - 同じディレクトリに複数拡張子が混在する場合でも優先度順に1ファイルのみを採用
     - 設定ファイルで指定した除外文字列を含むファイルは自動的に除外（デフォルト: "SE無し", "SEなし", "効果音無し", "効果音なし", "__MACOSX"）
     - 320kbps、48kHzの高音質設定
 - **メタデータ自動設定**：同名のHTMLファイルを参照してID3タグを自動設定
@@ -74,8 +75,8 @@ make build
 go run cmd/main.go  # ソースから直接実行する場合
 ```
 
-実行するとID3タグを設定しエンコードされたファイルが `output_dir/mp3_output_dir_name/Actor/Brand/AlbumTitle` 以下に配置されます。
-Actor, Brand, AlbumTitle はHTMLファイルをパースした結果が利用されます。
+実行するとID3タグを設定しエンコードされたファイルが `output_dir/mp3_output_dir_name/Actor/Brand/【Key】AlbumTitle` 以下に配置されます。
+ActorとBrand、AlbumTitleはHTMLパース結果を利用し、Actorは複数名の場合は先頭2名+「他」を「・」区切り、AlbumTitleは20文字超を「(…略)」付きで省略します。出力先ディレクトリが既に存在する場合は中身をクリーンアップしてから書き込みます。
 
 ### HTMLファイルの生成
 
@@ -158,9 +159,10 @@ mp3_output_dir_name = "mp3-output" # MP3出力ディレクトリ名
 - `image_dir`：メイン画像ファイルの配置先
 
 HTMLをパースした結果のみ確認したい場合は `save_parsed_data: true, convert: false` と設定してください。
+`save_parsed_data = true` の場合、`log_dir` 配下に対象ディレクトリごとの JSON (`<dir>.json`) を保存します。
 
 #### 除外ファイル
-設定ファイルの `exclude_strings` で指定された文字列を含むファイルは自動的に除外されます。これにより、不要なファイル（例: SEなしファイルや一時ファイル）を変換対象から除外できます。
+設定ファイルの `exclude_strings` で指定された文字列を**ファイルパス全体に含む**ファイルは自動的に除外されます。これにより、不要なファイル(例: SEなしファイルや一時ファイル)を変換対象から除外できます。除外判定はファイル名だけでなく、ディレクトリ名を含むパス全体に対して行われます。
 
 デフォルトの除外文字列:
 - `SE無し`、`SEなし`

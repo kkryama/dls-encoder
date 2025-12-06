@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/kkryama/dls-encoder/internal/config"
@@ -32,7 +33,10 @@ func FindAudioFiles(directory string, cfg *config.Config) []string {
 			// 除外対象の文字列が含まれている場合はスキップ
 			for _, excl := range excludeStrings {
 				if strings.Contains(path, excl) {
-					logger.Info(fmt.Sprintf("除外文字列 '%s' がパス '%s' に含まれているため、スキップします。", excl, path))
+					logger.LogDebugEvent("audio_file_excluded", map[string]interface{}{
+						"exclude_string": excl,
+						"path":           path,
+					})
 					return nil
 				}
 			}
@@ -46,8 +50,26 @@ func FindAudioFiles(directory string, cfg *config.Config) []string {
 			// 例3: 次に "track1.flac" (p=2) が見つかると、seen["track1"] = 3 > 2 なので、更新されません（WAV が優先）。
 			if p, ok := priority[ext]; ok {
 				if seen[name] < p {
+					prevPriority := seen[name]
+					prevPath := audioFiles[name]
 					seen[name] = p          // 優先度を更新
 					audioFiles[name] = path // パスを記録
+					if prevPriority > 0 {
+						logger.LogDebugEvent("audio_file_priority_updated", map[string]interface{}{
+							"file_name":     name,
+							"prev_priority": prevPriority,
+							"new_priority":  p,
+							"prev_path":     prevPath,
+							"new_path":      path,
+							"message":       fmt.Sprintf("%s は優先度 %d から %d に更新されたため '%s' を '%s' へ差し替えました。", name, prevPriority, p, prevPath, path),
+						})
+					} else {
+						logger.LogDebugEvent("audio_file_registered", map[string]interface{}{
+							"file_name": name,
+							"priority":  p,
+							"path":      path,
+						})
+					}
 				}
 			}
 		}
@@ -55,13 +77,22 @@ func FindAudioFiles(directory string, cfg *config.Config) []string {
 	})
 
 	if err != nil {
+		logger.LogWarnEvent("audio_file_search_error", map[string]interface{}{
+			"error":     err.Error(),
+			"directory": directory,
+		})
 		return nil
 	}
 
 	// マップからリストに変換
 	var result []string
-	for _, path := range audioFiles {
-		result = append(result, path)
+	keys := make([]string, 0, len(audioFiles))
+	for name := range audioFiles {
+		keys = append(keys, name)
+	}
+	sort.Strings(keys)
+	for _, name := range keys {
+		result = append(result, audioFiles[name])
 	}
 
 	return result

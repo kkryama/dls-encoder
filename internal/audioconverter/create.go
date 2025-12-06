@@ -47,17 +47,12 @@ func CleanUp(dir string) error {
 
 	for _, file := range files {
 		filePath := filepath.Join(dir, file.Name())
-		if err := os.Remove(filePath); err != nil {
+		if err := os.RemoveAll(filePath); err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-// ConvertFileToMp3 は音声ファイルをMP3形式に変換します。
-func ConvertFileToMp3(inputFile, mp3File string, metadata MP3Metadata) error {
-	return ConvertFileToMp3WithContext(context.Background(), inputFile, mp3File, metadata)
 }
 
 // ConvertFileToMp3WithContext はコンテキスト対応で音声ファイルをMP3形式に変換します。

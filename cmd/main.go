@@ -28,9 +28,8 @@ import (
 const (
 	logFileFormat   = "results_%s.log"
 	timeStampFormat = "20060102_150405"
-	wavExtension    = ".wav"
 	mp3Extension    = ".mp3"
-	version         = "20251206-120000" // 作業日時で更新
+	version         = "20251206-170300" // 作業日時で更新
 )
 
 // truncateAlbumTitle はアルバムタイトルが長すぎる場合に省略します。
@@ -55,7 +54,7 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigChan
-		logger.Info("終了シグナルを受信しました。処理を停止します...")
+		logger.LogMessage("終了シグナルを受信しました。処理を停止します...")
 		cancel()
 	}()
 
@@ -85,24 +84,19 @@ func main() {
 	}
 
 	// 通常のエンコード処理
-	if err := runWithContext(ctx); err != nil {
+	if err := runWithContext(ctx, cfg); err != nil {
 		fmt.Printf("エラー: %v\n", err)
 		os.Exit(1)
 	}
 }
 
 // runWithContext はコンテキストを使用して変換処理の全体フローを制御します。
-// 依存関係の確認、設定の読み込み、ログの初期化、HTMLの解析、MP3変換を実行します。
-func runWithContext(ctx context.Context) error {
-	logger.Info("dls-encoder version: " + version)
+// 依存関係の確認、ログの初期化、HTMLの解析、MP3変換を実行します。
+func runWithContext(ctx context.Context, cfg *config.Config) error {
+	logger.LogMessage("dls-encoder version: " + version)
 
 	if err := validateDependencies(); err != nil {
 		return fmt.Errorf("依存関係の確認に失敗: %w", err)
-	}
-
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		return fmt.Errorf("設定ファイルの読み込みに失敗: %w", err)
 	}
 
 	logFile, err := setupLogging(cfg.DirSetting.LogDir, cfg.Setting.Debug)
@@ -121,7 +115,11 @@ func runWithContext(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("対象ディレクトリ一覧の読み込みに失敗: %w", err)
 	}
-	logger.Info("対象ディレクトリ:", targetDirs)
+	logger.LogMessage(fmt.Sprintf("対象ディレクトリ: %v", targetDirs))
+	logger.LogDebugEvent("target_directories_loaded", map[string]interface{}{
+		"directories": targetDirs,
+		"count":       len(targetDirs),
+	})
 
 	data, notApplicableData, missingImageData, err := processDirectories(ctx, cfg, targetDirs)
 	if err != nil {
@@ -132,7 +130,7 @@ func runWithContext(ctx context.Context) error {
 		return fmt.Errorf("変換処理に失敗: %w", err)
 	}
 
-	logger.Info("処理が正常に終了しました。")
+	logger.LogMessage("処理が正常に終了しました。")
 	return nil
 }
 
@@ -178,10 +176,15 @@ func processDirectories(ctx context.Context, cfg *config.Config, targetDirs []st
 
 	for _, targetDir := range targetDirs {
 		key := filepath.Base(targetDir)
-		targetHtml := cfg.DirSetting.HtmlDir + targetDir + ".html"
+		targetHtml := filepath.Join(cfg.DirSetting.HtmlDir, targetDir+".html")
 
 		if err := processDirectory(cfg, targetHtml, key, data, &notApplicableData, &missingImageData); err != nil {
-			logger.Warn("ディレクトリの処理でエラーが発生:", err)
+			logger.LogWarnEvent("directory_processing_error", map[string]interface{}{
+				"error":      err.Error(),
+				"key":        key,
+				"targetHtml": targetHtml,
+				"message":    fmt.Sprintf("ディレクトリの処理でエラーが発生: %v", err),
+			})
 			continue
 		}
 	}
@@ -266,17 +269,25 @@ func handleConversion(ctx context.Context, cfg *config.Config, data map[string]m
 	})
 
 	if !cfg.Setting.Convert {
-		logger.Info("変換処理がOFFに設定されているため、処理を終了します")
+		logger.LogMessage("変換処理がOFFに設定されているため、処理を終了します")
 		return nil
 	}
 
 	keys := getSortedKeys(data)
-	logger.Info("処理対象:", keys)
+	logger.LogMessage(fmt.Sprintf("処理対象: %v", keys))
+	logger.LogDebugEvent("processing_targets", map[string]interface{}{
+		"keys":  keys,
+		"count": len(keys),
+	})
 	if len(notApplicableData) > 0 || len(missingImageData) > 0 {
 		var allNotApplicable []string
 		allNotApplicable = append(allNotApplicable, notApplicableData...)
 		allNotApplicable = append(allNotApplicable, missingImageData...)
-		logger.Info("処理対象外:", allNotApplicable)
+		logger.LogMessage(fmt.Sprintf("処理対象外: %v", allNotApplicable))
+		logger.LogDebugEvent("excluded_targets", map[string]interface{}{
+			"items": allNotApplicable,
+			"count": len(allNotApplicable),
+		})
 	}
 
 	for _, key := range keys {
@@ -314,10 +325,17 @@ func convertFiles(ctx context.Context, cfg *config.Config, key string, value mod
 	targetDir := filepath.Join(cfg.DirSetting.SourceDir, key)
 	audioFiles := audioconverter.FindAudioFiles(targetDir, cfg)
 
+	if len(audioFiles) == 0 {
+		return fmt.Errorf("音声ファイルが見つかりません: %s", targetDir)
+	}
+
 	// Actor が複数の場合、省略してディレクトリ名を短くする
-	actors := strings.Split(value.Actor, ",")
-	for i, actor := range actors {
-		actors[i] = strings.TrimSpace(actor)
+	actors := splitActorNames(value.Actor)
+	if len(actors) == 0 {
+		trimmed := strings.TrimSpace(value.Actor)
+		if trimmed != "" {
+			actors = []string{trimmed}
+		}
 	}
 	if len(actors) > 2 {
 		actors = append(actors[:2], "他")
@@ -356,7 +374,12 @@ func convertFiles(ctx context.Context, cfg *config.Config, key string, value mod
 		if err := convertSingleFile(ctx, inputFile, mp3OutputDir, baseMetaData); err != nil {
 			return fmt.Errorf("ファイル変換に失敗: %w", err)
 		}
-		logger.Info(fmt.Sprintf("[%s] のファイル [%s] のMP3変換が完了", key, path.Base(inputFile)))
+		logger.LogMessage(fmt.Sprintf("[%s] のファイル [%s] のMP3変換が完了", key, path.Base(inputFile)))
+		logger.LogDebugEvent("mp3_conversion_completed", map[string]interface{}{
+			"key":       key,
+			"file":      path.Base(inputFile),
+			"inputPath": inputFile,
+		})
 	}
 
 	return nil
@@ -395,7 +418,7 @@ func convertSingleFile(ctx context.Context, inputFile, outputDir string, baseMet
 	})
 
 	name := path.Base(inputFile)
-	nameWithoutExt := name[:len(name)-len(wavExtension)]
+	nameWithoutExt := strings.TrimSuffix(name, filepath.Ext(name))
 	mp3OutputPath := filepath.Join(outputDir, nameWithoutExt+mp3Extension)
 
 	metaData := baseMetaData
@@ -408,6 +431,31 @@ func convertSingleFile(ctx context.Context, inputFile, outputDir string, baseMet
 	return nil
 }
 
+// splitActorNames は声優名をカンマや中黒などの区切り文字で分割します。
+func splitActorNames(actor string) []string {
+	if actor == "" {
+		return nil
+	}
+
+	delimiters := func(r rune) bool {
+		switch r {
+		case ',', '・', '／', '/', '、', '，':
+			return true
+		default:
+			return false
+		}
+	}
+
+	parts := strings.FieldsFunc(actor, delimiters)
+	result := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
+}
+
 // printResults は変換処理の結果をログに出力します。
 // 処理対象外ファイルと画像不足ファイルの情報を表示します。
 func printResults(cfg *config.Config, notApplicableData, missingImageData []string) {
@@ -417,12 +465,22 @@ func printResults(cfg *config.Config, notApplicableData, missingImageData []stri
 	})
 
 	if len(notApplicableData) > 0 {
-		logger.Warn(fmt.Sprintf("下記のファイルはMP3変換できませんでした。[%s]に対応するHTMLファイルが存在するか確認してください", cfg.DirSetting.HtmlDir))
-		logger.Warn("  ", notApplicableData)
+		logger.LogWarnMessage(fmt.Sprintf("下記のファイルはMP3変換できませんでした。[%s]に対応するHTMLファイルが存在するか確認してください", cfg.DirSetting.HtmlDir))
+		logger.LogWarnMessage(fmt.Sprintf("  %v", notApplicableData))
+		logger.LogDebugEvent("mp3_conversion_not_applicable", map[string]interface{}{
+			"files":    notApplicableData,
+			"count":    len(notApplicableData),
+			"html_dir": cfg.DirSetting.HtmlDir,
+		})
 	}
 
 	if cfg.Setting.SetMainImage && len(missingImageData) > 0 {
-		logger.Warn(fmt.Sprintf("下記のファイルはメイン画像が見つからず、MP3変換処理を実行できませんでした。[%s]配下の画像ファイルを確認してください", cfg.DirSetting.HtmlDir))
-		logger.Warn("  ", missingImageData)
+		logger.LogWarnMessage(fmt.Sprintf("下記のファイルはメイン画像が見つからず、MP3変換処理を実行できませんでした。[%s]配下の画像ファイルを確認してください", cfg.DirSetting.ImageDir))
+		logger.LogWarnMessage(fmt.Sprintf("  %v", missingImageData))
+		logger.LogDebugEvent("main_image_missing", map[string]interface{}{
+			"files":     missingImageData,
+			"count":     len(missingImageData),
+			"image_dir": cfg.DirSetting.ImageDir,
+		})
 	}
 }

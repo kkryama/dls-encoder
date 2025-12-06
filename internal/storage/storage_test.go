@@ -125,17 +125,16 @@ func TestSaveJSON(t *testing.T) {
 	}
 
 	// テスト用の出力ディレクトリを作成
-	tempDir := t.TempDir()
-	outputPath := filepath.Join(tempDir, "output")
+	outputDir := filepath.Join(t.TempDir(), "output")
 
 	// JSONを保存
-	err := SaveJSON(outputPath, testData)
+	err := SaveJSON(outputDir, testData)
 	if err != nil {
 		t.Fatalf("SaveJSONの実行に失敗: %v", err)
 	}
 
 	// 保存されたJSONファイルを読み込んで検証
-	jsonPath := filepath.Join(filepath.Dir(outputPath), "RJ12345678.json")
+	jsonPath := filepath.Join(outputDir, "RJ12345678.json")
 	jsonFile, err := os.ReadFile(jsonPath)
 	if err != nil {
 		t.Fatalf("保存されたJSONファイルの読み込みに失敗: %v", err)
