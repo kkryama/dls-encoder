@@ -29,7 +29,7 @@ const (
 	logFileFormat   = "results_%s.log"
 	timeStampFormat = "20060102_150405"
 	mp3Extension    = ".mp3"
-	version         = "20251206-162050" // 作業日時で更新
+	version         = "20251206-170300" // 作業日時で更新
 )
 
 // truncateAlbumTitle はアルバムタイトルが長すぎる場合に省略します。
@@ -54,7 +54,7 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigChan
-		logger.Info("終了シグナルを受信しました。処理を停止します...")
+		logger.LogMessage("終了シグナルを受信しました。処理を停止します...")
 		cancel()
 	}()
 
@@ -93,7 +93,7 @@ func main() {
 // runWithContext はコンテキストを使用して変換処理の全体フローを制御します。
 // 依存関係の確認、ログの初期化、HTMLの解析、MP3変換を実行します。
 func runWithContext(ctx context.Context, cfg *config.Config) error {
-	logger.Info("dls-encoder version: " + version)
+	logger.LogMessage("dls-encoder version: " + version)
 
 	if err := validateDependencies(); err != nil {
 		return fmt.Errorf("依存関係の確認に失敗: %w", err)
@@ -115,7 +115,11 @@ func runWithContext(ctx context.Context, cfg *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("対象ディレクトリ一覧の読み込みに失敗: %w", err)
 	}
-	logger.Info("対象ディレクトリ:", targetDirs)
+	logger.LogMessage(fmt.Sprintf("対象ディレクトリ: %v", targetDirs))
+	logger.LogDebugEvent("target_directories_loaded", map[string]interface{}{
+		"directories": targetDirs,
+		"count":       len(targetDirs),
+	})
 
 	data, notApplicableData, missingImageData, err := processDirectories(ctx, cfg, targetDirs)
 	if err != nil {
@@ -126,7 +130,7 @@ func runWithContext(ctx context.Context, cfg *config.Config) error {
 		return fmt.Errorf("変換処理に失敗: %w", err)
 	}
 
-	logger.Info("処理が正常に終了しました。")
+	logger.LogMessage("処理が正常に終了しました。")
 	return nil
 }
 
@@ -175,7 +179,12 @@ func processDirectories(ctx context.Context, cfg *config.Config, targetDirs []st
 		targetHtml := filepath.Join(cfg.DirSetting.HtmlDir, targetDir+".html")
 
 		if err := processDirectory(cfg, targetHtml, key, data, &notApplicableData, &missingImageData); err != nil {
-			logger.Warn("ディレクトリの処理でエラーが発生:", err)
+			logger.LogWarnEvent("directory_processing_error", map[string]interface{}{
+				"error":      err.Error(),
+				"key":        key,
+				"targetHtml": targetHtml,
+				"message":    fmt.Sprintf("ディレクトリの処理でエラーが発生: %v", err),
+			})
 			continue
 		}
 	}
@@ -260,17 +269,25 @@ func handleConversion(ctx context.Context, cfg *config.Config, data map[string]m
 	})
 
 	if !cfg.Setting.Convert {
-		logger.Info("変換処理がOFFに設定されているため、処理を終了します")
+		logger.LogMessage("変換処理がOFFに設定されているため、処理を終了します")
 		return nil
 	}
 
 	keys := getSortedKeys(data)
-	logger.Info("処理対象:", keys)
+	logger.LogMessage(fmt.Sprintf("処理対象: %v", keys))
+	logger.LogDebugEvent("processing_targets", map[string]interface{}{
+		"keys":  keys,
+		"count": len(keys),
+	})
 	if len(notApplicableData) > 0 || len(missingImageData) > 0 {
 		var allNotApplicable []string
 		allNotApplicable = append(allNotApplicable, notApplicableData...)
 		allNotApplicable = append(allNotApplicable, missingImageData...)
-		logger.Info("処理対象外:", allNotApplicable)
+		logger.LogMessage(fmt.Sprintf("処理対象外: %v", allNotApplicable))
+		logger.LogDebugEvent("excluded_targets", map[string]interface{}{
+			"items": allNotApplicable,
+			"count": len(allNotApplicable),
+		})
 	}
 
 	for _, key := range keys {
@@ -357,7 +374,12 @@ func convertFiles(ctx context.Context, cfg *config.Config, key string, value mod
 		if err := convertSingleFile(ctx, inputFile, mp3OutputDir, baseMetaData); err != nil {
 			return fmt.Errorf("ファイル変換に失敗: %w", err)
 		}
-		logger.Info(fmt.Sprintf("[%s] のファイル [%s] のMP3変換が完了", key, path.Base(inputFile)))
+		logger.LogMessage(fmt.Sprintf("[%s] のファイル [%s] のMP3変換が完了", key, path.Base(inputFile)))
+		logger.LogDebugEvent("mp3_conversion_completed", map[string]interface{}{
+			"key":       key,
+			"file":      path.Base(inputFile),
+			"inputPath": inputFile,
+		})
 	}
 
 	return nil
@@ -443,12 +465,22 @@ func printResults(cfg *config.Config, notApplicableData, missingImageData []stri
 	})
 
 	if len(notApplicableData) > 0 {
-		logger.Warn(fmt.Sprintf("下記のファイルはMP3変換できませんでした。[%s]に対応するHTMLファイルが存在するか確認してください", cfg.DirSetting.HtmlDir))
-		logger.Warn("  ", notApplicableData)
+		logger.LogWarnMessage(fmt.Sprintf("下記のファイルはMP3変換できませんでした。[%s]に対応するHTMLファイルが存在するか確認してください", cfg.DirSetting.HtmlDir))
+		logger.LogWarnMessage(fmt.Sprintf("  %v", notApplicableData))
+		logger.LogDebugEvent("mp3_conversion_not_applicable", map[string]interface{}{
+			"files":    notApplicableData,
+			"count":    len(notApplicableData),
+			"html_dir": cfg.DirSetting.HtmlDir,
+		})
 	}
 
 	if cfg.Setting.SetMainImage && len(missingImageData) > 0 {
-		logger.Warn(fmt.Sprintf("下記のファイルはメイン画像が見つからず、MP3変換処理を実行できませんでした。[%s]配下の画像ファイルを確認してください", cfg.DirSetting.ImageDir))
-		logger.Warn("  ", missingImageData)
+		logger.LogWarnMessage(fmt.Sprintf("下記のファイルはメイン画像が見つからず、MP3変換処理を実行できませんでした。[%s]配下の画像ファイルを確認してください", cfg.DirSetting.ImageDir))
+		logger.LogWarnMessage(fmt.Sprintf("  %v", missingImageData))
+		logger.LogDebugEvent("main_image_missing", map[string]interface{}{
+			"files":     missingImageData,
+			"count":     len(missingImageData),
+			"image_dir": cfg.DirSetting.ImageDir,
+		})
 	}
 }

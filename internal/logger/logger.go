@@ -181,27 +181,27 @@ func getDefaultLogger() Logger {
 	return defaultLogger
 }
 
-// Debug はデバッグレベルのログを出力
-func Debug(args ...interface{}) {
+// debug はデバッグレベルのログを出力（内部使用）
+func debug(args ...interface{}) {
 	getDefaultLogger().Debug(args...)
 }
 
-// Info は情報レベルのログを出力
-func Info(args ...interface{}) {
+// info は情報レベルのログを出力（内部使用）
+func info(args ...interface{}) {
 	getDefaultLogger().Info(args...)
 }
 
-// Warn は警告レベルのログを出力
-func Warn(args ...interface{}) {
+// warn は警告レベルのログを出力（内部使用）
+func warn(args ...interface{}) {
 	getDefaultLogger().Warn(args...)
 }
 
-// Error はエラーレベルのログを出力
-func Error(args ...interface{}) {
+// error はエラーレベルのログを出力（内部使用）
+func errorLog(args ...interface{}) {
 	getDefaultLogger().Error(args...)
 }
 
-// Fatal は致命的エラーレベルのログを出力し、プログラムを終了
-func Fatal(args ...interface{}) {
+// fatal は致命的エラーレベルのログを出力し、プログラムを終了（内部使用）
+func fatal(args ...interface{}) {
 	getDefaultLogger().Fatal(args...)
 }

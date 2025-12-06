@@ -33,7 +33,10 @@ func FindAudioFiles(directory string, cfg *config.Config) []string {
 			// 除外対象の文字列が含まれている場合はスキップ
 			for _, excl := range excludeStrings {
 				if strings.Contains(path, excl) {
-					logger.Debug(fmt.Sprintf("除外文字列 '%s' がパス '%s' に含まれているため、スキップします。", excl, path))
+					logger.LogDebugEvent("audio_file_excluded", map[string]interface{}{
+						"exclude_string": excl,
+						"path":           path,
+					})
 					return nil
 				}
 			}
@@ -52,9 +55,20 @@ func FindAudioFiles(directory string, cfg *config.Config) []string {
 					seen[name] = p          // 優先度を更新
 					audioFiles[name] = path // パスを記録
 					if prevPriority > 0 {
-						logger.Debug(fmt.Sprintf("%s は優先度 %d から %d に更新されたため '%s' を '%s' へ差し替えました。", name, prevPriority, p, prevPath, path))
+						logger.LogDebugEvent("audio_file_priority_updated", map[string]interface{}{
+							"file_name":     name,
+							"prev_priority": prevPriority,
+							"new_priority":  p,
+							"prev_path":     prevPath,
+							"new_path":      path,
+							"message":       fmt.Sprintf("%s は優先度 %d から %d に更新されたため '%s' を '%s' へ差し替えました。", name, prevPriority, p, prevPath, path),
+						})
 					} else {
-						logger.Debug(fmt.Sprintf("%s を優先度 %d のファイル '%s' として登録しました。", name, p, path))
+						logger.LogDebugEvent("audio_file_registered", map[string]interface{}{
+							"file_name": name,
+							"priority":  p,
+							"path":      path,
+						})
 					}
 				}
 			}
@@ -63,7 +77,10 @@ func FindAudioFiles(directory string, cfg *config.Config) []string {
 	})
 
 	if err != nil {
-		logger.Warn(fmt.Sprintf("音声ファイル探索中にエラー: %v", err))
+		logger.LogWarnEvent("audio_file_search_error", map[string]interface{}{
+			"error":     err.Error(),
+			"directory": directory,
+		})
 		return nil
 	}
 
