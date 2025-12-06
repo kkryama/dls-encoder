@@ -10,13 +10,13 @@ dls-encoder(`Dynamic Labeling System-Encoder`)はFFmpegを利用してMP3にエ�
 - **音声変換**：WAV、FLAC、MP3ファイルからMP3への変換
    - 優先度: WAV > FLAC > MP3
    - 同じディレクトリに複数拡張子が混在する場合でも優先度順に1ファイルのみを採用
-    - 設定ファイルで指定した除外文字列を含むファイルは自動的に除外（デフォルト: "SE無し", "SEなし", "効果音無し", "効果音なし", "__MACOSX"）
+   - 設定ファイルで指定した除外文字列を含むファイルは自動的に除外（デフォルト: "SE無し", "SEなし", "効果音無し", "効果音なし", "_MACOSX"）
     - 320kbps、48kHzの高音質設定
 - **メタデータ自動設定**：同名のHTMLファイルを参照してID3タグを自動設定
 - **設定ファイル管理**：TOMLファイルによる柔軟なディレクトリ管理
 - **対話型HTMLファイル生成機能**
-    - アルバム情報を対話形式で入力
-    - トラックリストの自動生成（通常形式の場合）
+   - アルバム情報を対話形式で入力
+   - 通常形式ではトラックリストを対話形式で手動入力
     - d_xxxxxx形式のファイル名の場合、トラックリストなしのシンプルなHTMLを生成
     - 既存ファイルの上書き確認
 - **画像埋め込み**：メイン画像のMP3への埋め込み
@@ -125,10 +125,10 @@ HTMLファイルを生成してエンコードまで実施する場合、 `set_m
 ```toml
 [setting]
 set_main_image = true    # メイン画像を設定するかどうか
-save_parsed_data = true  # HTMLをパースしたデータを保存するかどうか
+save_parsed_data = true  # 解析データをJSONファイルに保存するかどうか
 convert = true           # 音声ファイルの変換を実行するかどうか
 debug = false           # デバッグログを出力するかどうか
-exclude_strings = ["SE無し", "SEなし", "効果音無し", "効果音なし", "__MACOSX"]  # 除外する文字列リスト
+exclude_strings = ["SE無し", "SEなし", "効果音無し", "効果音なし", "_MACOSX"]  # 除外する文字列リスト
 
 [dir_setting]
 source_dir = "./data/source/"      # 変換対象のファイルを配置するディレクトリ
@@ -145,7 +145,7 @@ mp3_output_dir_name = "mp3-output" # MP3出力ディレクトリ名
 
 #### [setting] セクション
 - `set_main_image`：メイン画像をMP3に埋め込むかどうか（true/false）
-- `save_parsed_data`：HTMLをパースしたデータをJSONファイルとして保存するかどうか（true/false）
+- `save_parsed_data`：解析データをJSONファイルに保存するかどうか（true/false）
 - `convert`：音声ファイルの変換を実行するかどうか（true/false）
 - `debug`：デバッグログを出力するかどうか（true/false）
 - `exclude_strings`：除外する文字列のリスト（配列）
@@ -159,7 +159,7 @@ mp3_output_dir_name = "mp3-output" # MP3出力ディレクトリ名
 - `image_dir`：メイン画像ファイルの配置先
 
 HTMLをパースした結果のみ確認したい場合は `save_parsed_data: true, convert: false` と設定してください。
-`save_parsed_data = true` の場合、`log_dir` 配下に対象ディレクトリごとの JSON (`<dir>.json`) を保存します。
+`save_parsed_data = true` の場合、`log_dir` 配下に対象ディレクトリごとの解析結果を JSON ファイル (`<dir>.json`) として保存します。
 
 #### 除外ファイル
 設定ファイルの `exclude_strings` で指定された文字列を**ファイルパス全体に含む**ファイルは自動的に除外されます。これにより、不要なファイル(例: SEなしファイルや一時ファイル)を変換対象から除外できます。除外判定はファイル名だけでなく、ディレクトリ名を含むパス全体に対して行われます。
@@ -167,7 +167,9 @@ HTMLをパースした結果のみ確認したい場合は `save_parsed_data: tr
 デフォルトの除外文字列:
 - `SE無し`、`SEなし`
 - `効果音無し`、`効果音なし`
-- `__MACOSX`
+- `_MACOSX`
+
+`_MACOSX` を指定すると `__MACOSX` ディレクトリにも部分一致でマッチします。
 
 必要に応じて `config/config.toml` の `exclude_strings` を編集して除外パターンをカスタマイズしてください。
 
@@ -242,7 +244,7 @@ HTMLをパースした結果のみ確認したい場合は `save_parsed_data: tr
    save_parsed_data = true
    convert = false
    ```
-   パースしたデータがJSONファイルとして保存され、変換処理は実行されません
+   解析データがJSONファイルとして保存され、変換処理は実行されません
 
 ## 開発者向け情報
 
@@ -322,34 +324,47 @@ make clean # ビルド成果物、ログ、一時ファイルの削除
 ```
 dls-encoder/
 ├── cmd/
-│   └── main.go                    # エントリーポイント
+│   ├── main.go                    # エントリーポイント
+│   └── main_test.go               # メインロジックのテスト
 ├── internal/
 │   ├── audioconverter/            # 音声変換機能
+│   │   ├── audioconverter_test.go # 音声変換のテスト
 │   │   ├── create.go              # MP3変換とメタデータ設定
 │   │   └── find.go                # 音声ファイル検索
 │   ├── config/                    # 設定管理
 │   │   ├── config.go              # 設定構造体定義
+│   │   ├── config_test.go         # 設定のテスト
 │   │   └── load_config.go         # 設定ファイル読み込み
 │   ├── generator/                 # HTML生成機能
 │   │   ├── interactive.go         # 対話型HTMLファイル生成
-│   │   └── template.go            # HTMLテンプレート
+│   │   ├── interactive_test.go    # 対話型生成のテスト
+│   │   ├── template.go            # HTMLテンプレート
+│   │   └── template_test.go       # テンプレートのテスト
 │   ├── logger/                    # ログ出力機能
+│   │   ├── api.go                 # ログAPIインターフェース
 │   │   ├── logger.go              # ログ出力の実装
-│   │   └── debug.go               # デバッグ機能
+│   │   └── logger_test.go         # ログのテスト
 │   ├── model/                     # データモデル
-│   │   └── data.go                # データ構造体定義
+│   │   ├── data.go                # データ構造体定義
+│   │   └── data_test.go           # データモデルのテスト
 │   ├── parser/                    # HTML解析機能
+│   │   ├── html_extractor.go     # HTML要素抽出
 │   │   ├── parse.go               # HTMLファイル解析
-│   │   └── html_extractor.go      # HTML要素抽出
+│   │   └── parser_test.go         # パーサーのテスト
 │   └── storage/                   # ファイル管理機能
+│       ├── find_main_image.go     # メイン画像検索
 │       ├── load_target.go         # 対象ディレクトリ読み込み
 │       ├── save_json.go           # JSON保存
-│       └── find_main_image.go     # メイン画像検索
+│       └── storage_test.go        # ストレージのテスト
 ├── config/
 │   └── config.toml                # 設定ファイル
+├── scripts/                       # ユーティリティスクリプト
+│   ├── cleanup_output_dir.sh      # 出力ディレクトリクリーンアップ
+│   └── unzip-all-zips.sh          # ZIP一括展開
 └── data/                          # 処理対象データ
     ├── source/                    # 変換元音声ファイル
     ├── html/                      # メタデータ用HTMLファイル
+    ├── image/                     # メイン画像ファイル
     ├── output/                    # 変換後MP3ファイル
     └── log/                       # ログファイル
 ```
@@ -360,7 +375,7 @@ dls-encoder/
 2. **ディレクトリスキャン**：source_dir内の対象ディレクトリを検索
 3. **HTML解析**：各ディレクトリに対応するHTMLファイルをパース
 4. **画像検索**：メイン画像ファイルを検索（設定により）
-5. **音声ファイル検索**：WAV/MP3ファイルを検索、WAV優先
+5. **音声ファイル検索**：WAV/FLAC/MP3ファイルを検索、優先度順に選択
 6. **MP3変換**：FFmpegによる変換とメタデータ設定
 7. **結果出力**：処理結果とエラー情報をログ出力
 
