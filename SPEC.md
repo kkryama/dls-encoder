@@ -2,7 +2,7 @@
 
 ## 概要
 
-dls-encoder は、RJxxxxxxxx または d_xxxxxx 形式のディレクトリからダウンロードしたコンテンツのエンコーダーです。FFmpeg を利用して WAV/MP3 ファイルを MP3 形式に変換し、同名の HTML ファイルからメタデータを自動的に設定します。音楽ライブラリやデータベースのメタデータ管理を簡素化し、特に個人用の音楽整理に役立ちます。
+dls-encoder は、RJxxxxxxxx または d_xxxxxx 形式のディレクトリからダウンロードしたコンテンツのエンコーダーです。FFmpeg を利用して WAV/FLAC/MP3 ファイルを MP3 形式に変換し、同名の HTML ファイルからメタデータを自動的に設定します。音楽ライブラリやデータベースのメタデータ管理を簡素化し、特に個人用の音楽整理に役立ちます。
 
 ## 機能仕様
 
@@ -15,7 +15,7 @@ dls-encoder は、RJxxxxxxxx または d_xxxxxx 形式のディレクトリか�
   - エンコーダー: libmp3lame
   - ID3 バージョン: 2.3
 - **優先順位**: 同じディレクトリに複数拡張子が存在する場合、WAV > FLAC > MP3 の優先度で1つのみを採用
-- **除外ファイル**: 設定ファイルで指定した除外文字列を**ファイルパス全体**に含むファイルは自動的に除外（デフォルト: "SE無し", "SEなし", "効果音無し", "効果音なし", "__MACOSX"）。除外判定はファイル名だけでなく、ディレクトリ名を含むパス全体に対して行われます。
+- **除外ファイル**: 設定ファイルで指定した除外文字列を**ファイルパス全体**に含むファイルは自動的に除外（デフォルト: "SE無し", "SEなし", "効果音無し", "効果音なし", "_MACOSX"）。除外判定はファイル名だけでなく、ディレクトリ名を含むパス全体に対して行われます。`_MACOSX` を指定すると `__MACOSX` ディレクトリにも部分一致でマッチします。
 
 ### 2. メタデータ自動設定機能
 - **メタデータソース**: 同名の HTML ファイル
@@ -102,7 +102,7 @@ FFmpeg コマンドでのメタデータ設定：
 - **形式**: TOML ファイル (`config/config.toml`)
 - **設定項目**:
   - `set_main_image`: メイン画像を MP3 に埋め込むかどうか (bool)
-  - `save_parsed_data`: HTML をパースしたデータを JSON ファイルとして保存するかどうか (bool)。`true` の場合、`log_dir` 配下に対象ディレクトリごとの JSON (`<dir>.json`) を保存
+  - `save_parsed_data`: 解析データを JSON ファイルに保存するかどうか (bool)。`true` の場合、`log_dir` 配下に対象ディレクトリごとの JSON (`<dir>.json`) を保存
   - `convert`: 音声ファイルの変換を実行するかどうか (bool)
   - `debug`: デバッグログを出力するかどうか (bool)
   - `exclude_strings`: 除外する文字列のリスト (array)
@@ -167,10 +167,10 @@ TOML (Tom's Obvious, Minimal Language)
 ```toml
 [setting]
 set_main_image = true    # メイン画像を設定するかどうか
-save_parsed_data = true  # HTMLをパースしたデータを保存するかどうか
+save_parsed_data = true  # 解析データをJSONファイルに保存するかどうか
 convert = true           # 音声ファイルの変換を実行するかどうか
 debug = false           # デバッグログを出力するかどうか
-exclude_strings = ["SE無し", "SEなし", "効果音無し", "効果音なし", "__MACOSX"]  # 除外する文字列リスト
+exclude_strings = ["SE無し", "SEなし", "効果音無し", "効果音なし", "_MACOSX"]  # 除外する文字列リスト
 
 [dir_setting]
 source_dir = "./data/source/"      # 変換対象のファイルを配置するディレクトリ
@@ -205,7 +205,7 @@ mp3_output_dir_name = "mp3-output" # MP3出力ディレクトリ名
 1. 変換対象ディレクトリをソート
 2. 各ディレクトリに対して以下の処理:
    - 出力ディレクトリの準備 (`output_dir/mp3_output_dir_name/Actor/Brand/【Key】AlbumTitle`)
-   - 音声ファイルの検索 (WAV 優先、除外文字列を含むファイルはスキップ)
+   - 音声ファイルの検索 (優先度: WAV > FLAC > MP3、除外文字列を含むファイルはスキップ)
    - 各音声ファイルに対して:
      - MP3 変換実行 (FFmpeg 使用)
      - ID3 タグ設定
