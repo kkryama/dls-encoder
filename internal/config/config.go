@@ -7,8 +7,9 @@ import (
 )
 
 type Config struct {
-	Setting    Setting    `mapstructure:"setting"`
-	DirSetting DirSetting `mapstructure:"dir_setting"`
+	Setting       Setting       `mapstructure:"setting"`
+	DirSetting    DirSetting    `mapstructure:"dir_setting"`
+	SanitizeRules SanitizeRules `mapstructure:",squash"`
 }
 
 // Validate は設定値の妥当性をチェック
@@ -53,6 +54,11 @@ type Setting struct {
 	Convert        bool     `mapstructure:"convert"`
 	Debug          bool     `mapstructure:"debug"`
 	ExcludeStrings []string `mapstructure:"exclude_strings"`
+}
+
+type SanitizeRules struct {
+	Any map[string]string `mapstructure:"any"`
+	End map[string]string `mapstructure:"end"`
 }
 
 type DirSetting struct {

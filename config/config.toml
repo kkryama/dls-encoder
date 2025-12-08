@@ -5,6 +5,12 @@ convert = false                    # MP3変換を実行するかどうか
 debug = false                      # デバッグログを出力するかどうか
 exclude_strings = ["SE無し", "SEなし", "効果音無し", "効果音なし", "_MACOSX"]  # 除外する文字列リスト
 
+[setting.sanitize_rules.any]
+"/" = "／"
+
+[setting.sanitize_rules.end]
+"." = "．"
+
 [dir_setting]
 source_dir = "./data/source/"
 html_dir = "./data/html/"
