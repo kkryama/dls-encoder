@@ -29,7 +29,7 @@ const (
 	logFileFormat   = "results_%s.log"
 	timeStampFormat = "20060102_150405"
 	mp3Extension    = ".mp3"
-	version         = "20251206-170300" // 作業日時で更新
+	version         = "20251209-073257" // 作業日時で更新
 )
 
 // truncateAlbumTitle はアルバムタイトルが長すぎる場合に省略します。
@@ -40,6 +40,23 @@ func truncateAlbumTitle(title string) string {
 		return title
 	}
 	return string(runes[:maxLen]) + "(…略)"
+}
+
+// sanitizeDirName はディレクトリ名から無効な文字を置換します。
+// config で定義された sanitize_rules に基づいて置き換えを行います。
+func sanitizeDirName(name string, cfg *config.Config) string {
+	result := name
+	// any: 常に置き換え
+	for from, to := range cfg.SanitizeRules.Any {
+		result = strings.ReplaceAll(result, from, to)
+	}
+	// end: 末尾のみ置き換え
+	for from, to := range cfg.SanitizeRules.End {
+		trimmed := strings.TrimRight(result, from)
+		count := len(result) - len(trimmed)
+		result = trimmed + strings.Repeat(to, count)
+	}
+	return result
 }
 
 // main はプログラムのエントリーポイントです。
@@ -340,11 +357,11 @@ func convertFiles(ctx context.Context, cfg *config.Config, key string, value mod
 	if len(actors) > 2 {
 		actors = append(actors[:2], "他")
 	}
-	actorDir := strings.Join(actors, "・")
+	actorDir := sanitizeDirName(strings.Join(actors, "・"), cfg)
 
-	shortAlbumTitle := truncateAlbumTitle(value.AlbumTitle)
+	shortAlbumTitle := sanitizeDirName(truncateAlbumTitle(value.AlbumTitle), cfg)
 
-	mp3OutputDir := filepath.Join(cfg.DirSetting.OutputDir, cfg.DirSetting.Mp3OutputDirName, actorDir, value.Brand, fmt.Sprintf("【%s】%s", key, shortAlbumTitle))
+	mp3OutputDir := filepath.Join(cfg.DirSetting.OutputDir, cfg.DirSetting.Mp3OutputDirName, actorDir, sanitizeDirName(value.Brand, cfg), fmt.Sprintf("【%s】%s", key, shortAlbumTitle))
 
 	if err := prepareOutputDirectory(mp3OutputDir); err != nil {
 		return err

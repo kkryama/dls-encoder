@@ -22,6 +22,12 @@ save_parsed_data = true
 convert = true
 debug = false
 
+[setting.sanitize_rules.any]
+"/" = "／"
+
+[setting.sanitize_rules.end]
+"." = "．"
+
 [dir_setting]
 source_dir = "./data/source"
 html_dir = "./data/html"

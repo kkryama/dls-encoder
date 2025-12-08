@@ -21,5 +21,9 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("設定のパースエラー: %w", err)
 	}
 
+	// SanitizeRules
+	cfg.SanitizeRules.Any = viper.GetStringMapString("setting.sanitize_rules.any")
+	cfg.SanitizeRules.End = viper.GetStringMapString("setting.sanitize_rules.end")
+
 	return &cfg, nil
 }

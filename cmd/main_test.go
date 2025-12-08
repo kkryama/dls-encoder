@@ -87,3 +87,42 @@ func TestSplitActorNames(t *testing.T) {
 		t.Fatalf("splitActorNames of empty string should return nil, got %v", got)
 	}
 }
+
+func TestSanitizeDirName(t *testing.T) {
+	t.Parallel()
+
+	cfg := &config.Config{
+		SanitizeRules: config.SanitizeRules{
+			Any: map[string]string{
+				"/": "／",
+			},
+			End: map[string]string{
+				".": "．",
+			},
+		},
+	}
+
+	testCases := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"noTrailingDot", "TestBrand", "TestBrand"},
+		{"singleTrailingDot", "TestBrand.", "TestBrand．"},
+		{"multipleTrailingDots", "TestBrand...", "TestBrand．．．"},
+		{"dotInMiddle", "Test.Brand", "Test.Brand"},
+		{"emptyString", "", ""},
+		{"onlyDots", "...", "．．．"},
+		{"slashInMiddle", "Test/Brand", "Test／Brand"},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			got := sanitizeDirName(tc.input, cfg)
+			if got != tc.want {
+				t.Fatalf("sanitizeDirName(%q) = %q, want %q", tc.input, got, tc.want)
+			}
+		})
+	}
+}
